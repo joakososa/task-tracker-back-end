@@ -1,0 +1,808 @@
+openapi: 3.0.3
+info:
+  title: API de Gestión de Tareas
+  description: Una API simple para crear y listar tareas pendientes.
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000
+    description: Desarrollo local (dotnet run / docker)
+tags:
+  - name: Auth
+    description: Operaciones relacionadas con la autenticación de usuarios.
+  - name: Users
+    description: Operaciones relacionadas con la gestión de usuarios.
+  - name: Projects
+    description: Operaciones relacionadas con la gestión de proyectos.
+  - name: Tasks
+    description: Operaciones relacionadas con la gestión de tareas.
+  - name: Comments
+    description: Operaciones relacionadas con la gestión de comentarios.
+security:
+  - BearerAuth: []  
+paths:
+  /auth/login:
+    post:
+      tags:
+          - Auth
+      summary: Iniciar sesión de usuario
+      operationId: "login"
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogInInput"
+      responses:
+        "200":
+          description: Inicio de sesión exitoso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /users:
+    post:
+      summary: Registrar un nuevo usuario
+      operationId: "registerUser"
+      tags:
+          - Users
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserInput"
+      responses:
+        "201":
+          description: Usuario registrado con éxito
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /users/me:
+    get:
+      summary: Obtener información del usuario actualmente autenticado
+      operationId: "getCurrentUser"
+      tags:
+          - Users
+      responses:
+        "200":
+          description: Información del usuario obtenida con éxito
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      summary: Actualizar información del usuario actualmente autenticado
+      operationId: "updateCurrentUser"
+      tags:
+          - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserEditInput"
+      responses:
+        "200":
+          description: Información del usuario actualizada con éxito
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /projects:
+    post:
+      summary: Crear un nuevo proyecto
+      operationId: "createProject"
+      tags:
+          - Projects
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Proyecto creado con éxito
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    get:
+      summary: Obtener todos los proyectos a los que el usuario tiene acceso
+      operationId: "listProjects"      
+      tags:
+          - Projects
+      responses:
+        "200":
+          description: Lista de proyectos obtenida con éxito
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProjectResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /projects/{id}:
+    get:
+      summary: Obtener proyecto por ID
+      operationId: "getProject"
+      tags:
+          - Projects
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Proyecto encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      summary: Actualizar proyecto por ID
+      operationId: "updateProject"
+      tags:
+        - Projects
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectEditInput"
+      responses:
+        "200":
+          description: Proyecto actualizado con éxito
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: Eliminar proyecto por ID
+      operationId: "deleteProject"
+      tags:
+        - Projects
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Proyecto eliminado con éxito
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /projects/{id}/members:
+    post:
+      operationId: "addMemberToProject"
+      summary: Agregar un miembro a un proyecto por ID
+      tags:
+        - Projects
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssociateIdInput"
+      responses:
+        "204":
+          description: Miembro agregado con éxito al proyecto
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /projects/{id}/tasks:
+    post:
+      summary: Crear una nueva tarea en un proyecto por ID
+      operationId: "createTaskInProject"
+      tags:
+        - Tasks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+      responses:
+        "201":
+          description: Tarea creada con éxito en el proyecto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    get:
+      
+      summary: Obtener todas las tareas
+      operationId: "listTasks"
+      tags:
+        - Tasks
+      parameters:
+        - name: state
+          in: query
+          schema:
+            $ref: "#/components/schemas/TaskStateEnum"
+        - name: assigneeId
+          in: query
+          schema:
+            type: integer
+            example: 1
+      responses:
+        "200":
+          description: Lista de tareas obtenida con éxito
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TaskResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /tasks/{id}:
+    delete:
+      summary: Eliminar tarea por ID
+      operationId: "deleteTask"
+      tags:
+        - Tasks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Tarea eliminada con éxito
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      summary: Actualizar tarea por ID
+      operationId: "updateTask"
+      tags:
+        - Tasks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskEditInput"
+      responses:
+        "200":
+          description: Tarea actualizada con éxito
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /tasks/{id}/assignee:
+    put:
+      summary: Asignar un usuario a una tarea por ID
+      operationId: "assignUserToTask"
+      tags:
+        - Tasks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssociateIdInput"
+      responses:
+        "200":
+          description: Usuario asignado con éxito a la tarea
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /tasks/{id}/state:
+    put:
+      summary: Actualizar el estado de una tarea por ID
+      operationId: "changeTaskState"
+      tags:
+        - Tasks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangeStateInput"
+      responses:
+        "200":
+          description: Usuario asignado con éxito a la tarea
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskResponse"          
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /tasks/{id}/comments:
+    post:
+      summary: Agregar un comentario a una tarea por ID
+      operationId: "addCommentToTask"
+      tags:
+        - Comments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommentInput"
+      responses:
+        "201":
+          description: Comentario agregado con éxito a la tarea
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommentResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    get:
+      summary: Obtener todos los comentarios de una tarea por ID 
+      operationId: "listCommentsForTask"
+      tags:
+        - Comments
+      description: >
+        Devuelve una lista de comentarios de acuerdo al ID de la tarea. 
+        **La respuesta está ordenada por `createdAt` de forma descendente (DESC).**
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lista de comentarios obtenida con éxito
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CommentResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    AuditFields:
+      type: object
+      required:
+        - createdAt
+        - updatedAt
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Fecha y hora de creación.
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Fecha y hora de la última actualización.
+        createdBy:
+          type: integer
+          readOnly: true
+          description: Identificador del usuario que creó el registro.
+    LogInInput:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          format: password
+          example: "securepassword"
+    LoginResponse:
+      required:
+        - accessToken
+        - tokenType
+        - expiresIn
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        tokenType:
+          type: string
+          enum: ["Bearer"]
+          example: "Bearer"
+        expiresIn:
+          type: integer
+          example: 3600
+    UserInput:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          example: "Juan Pérez"
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          format: password
+          example: "securepassword"
+        avatar:
+          type: string
+          format: uri
+          example: "https://example.com/avatar.jpg"
+    UserResponse:
+      allOf:
+        - $ref: "#/components/schemas/AuditFields"
+        - type: object
+          required:
+            - id
+            - name
+            - email
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: "Juan Pérez"
+            email:
+              type: string
+              format: email
+              example: "user@example.com"
+            avatar:
+              type: string
+              format: uri
+              example: "https://example.com/avatar.jpg"
+    UserEditInput:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Juan Pérez"
+        avatar:
+          type: string
+          format: uri
+          example: "https://example.com/avatar.jpg"
+    ProjectInput:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: "Proyecto de ejemplo"
+    ProjectEditInput:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Proyecto de ejemplo"
+    ProjectResponse:
+      allOf:
+        - $ref: "#/components/schemas/AuditFields"
+        - type: object
+          required:
+            - id
+            - name  
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: "Proyecto de ejemplo"
+            members:
+              type: array
+              items:
+                $ref: "#/components/schemas/UserResponse"
+    AssociateIdInput:
+      type: object
+      required:
+        - userId
+      properties:
+        userId:
+          type: integer
+          example: 1
+    TaskInput:
+      type: object
+      required:
+        - title
+        - description
+      properties:
+        title:
+          type: string
+          example: "Nueva tarea"
+        description:
+          type: string
+          example: "Descripción de la nueva tarea"
+        priority:
+          $ref: "#/components/schemas/TaskPriorityEnum"
+    TaskEditInput:
+      type: object
+      required:
+        - title
+        - description
+      properties:
+        title:
+          type: string
+          example: "Nueva tarea"
+        description:
+          type: string
+          example: "Descripción de la nueva tarea"
+        priority:
+          $ref: "#/components/schemas/TaskPriorityEnum"
+    TaskResponse:
+      allOf:
+        - $ref: "#/components/schemas/AuditFields"
+        - type: object
+          required:
+            - id
+            - title
+            - description
+            - priority
+            - projectId
+            - projectName
+            - state
+          properties:
+            id:
+              type: integer
+              example: 1
+            title:
+              type: string
+              example: "Nueva tarea"
+            description:
+              type: string
+              example: "Descripción de la nueva tarea"
+            priority:
+              $ref: "#/components/schemas/TaskPriorityEnum"
+            projectId:
+              type: integer
+              example: 1
+            projectName:
+              type: string
+              example: "Proyecto de ejemplo"
+            assignee:
+              oneOf:
+                - $ref: "#/components/schemas/UserResponse"
+              nullable: true              
+            state:
+              $ref: "#/components/schemas/TaskStateEnum"
+    ChangeStateInput:
+      type: object
+      required:
+        - state
+      properties:
+        state:
+          $ref: "#/components/schemas/TaskStateEnum"
+    CommentInput:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          example: "Este es un comentario de ejemplo."
+    CommentResponse:
+      allOf:
+        - $ref: "#/components/schemas/AuditFields"
+        - type: object
+          required:
+            - id
+            - content
+            - author
+          properties:
+            id:
+              type: integer
+              example: 1
+            content:
+              type: string
+              example: "Este es un comentario de ejemplo."
+            author:
+              $ref: "#/components/schemas/UserResponse"
+    TaskStateEnum:
+      type: string
+      enum: [Todo, InProgress, Done]
+      example: "InProgress"
+    TaskPriorityEnum:
+      type: string
+      enum: [Low, Medium, High]
+      example: "Medium"
+    # Esquema global de error
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Código de error único para identificar el problema.
+          example: INVALID_INPUT
+        message:
+          type: string
+          description: Descripción legible para humanos sobre el error ocurrido.
+          example: Los datos proporcionados no son válidos.
+  responses:
+    # Respuestas de error estándar reutilizables
+    Unauthorized:
+      description: No autenticado. Falta el token de acceso o es inválido.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    Forbidden:
+      description: Prohibido. El usuario autenticado no tiene permisos para este recurso.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    NotFound:
+      description: No encontrado. El recurso solicitado no existe.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    ValidationError:
+      description: Error de validación. Los datos enviados no cumplen con los requisitos.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    Conflict:
+      description: Conflicto. La solicitud no se pudo completar por un conflicto con el estado actual del recurso.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"

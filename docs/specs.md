@@ -23,8 +23,8 @@
 - **RF-10** Una tarea tiene un estado: `Todo`, `InProgress`, `Done`. Se modela como enum; es un buen lugar para aplicar más adelante un patrón simple de máquina de estados (ver ADR correspondiente).
 - **RF-11** Un miembro puede asignar una tarea a otro miembro del proyecto.
 - **RF-12** Un miembro puede cambiar el estado de una tarea (ej: mover de `Todo` a `InProgress`).
-- **RF-13** **[decisión de negocio]** Un miembro puede editar o eliminar una tarea — ¿solo el creador? ¿cualquier miembro? Resuelto en `decisiones-arquitectura.md` (ADR sobre permisos de edición/eliminación de tareas).
-- **RF-14** Se puede filtrar/listar tareas por proyecto, estado y asignado.
+- **RF-13** Un miembro del proyecto puede editar o eliminar una tarea 
+- **RF-14** Se puede filtrar/listar las tareas de un proyecto por estado y asignado.
 
 ### 4. Comentarios
 
