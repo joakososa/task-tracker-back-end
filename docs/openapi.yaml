@@ -293,6 +293,11 @@ paths:
       tags:
         - Tasks
       parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
         - name: state
           in: query
           schema:
@@ -603,6 +608,8 @@ components:
               example: "https://example.com/avatar.jpg"
     UserEditInput:
       type: object
+      required:
+        - name
       properties:
         name:
           type: string
@@ -631,7 +638,8 @@ components:
         - type: object
           required:
             - id
-            - name  
+            - name 
+            - owner
           properties:
             id:
               type: integer
@@ -643,6 +651,8 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/UserResponse"
+            owner: 
+              $ref: "#/components/schemas/UserResponse"
     AssociateIdInput:
       type: object
       required:
