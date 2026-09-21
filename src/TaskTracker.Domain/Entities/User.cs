@@ -6,6 +6,7 @@ public class User : AuditableEntity
 {
     public const int NameMaxLength = 100;
     public const int EmailMaxLength = 256;
+    public const int PasswordHashMaxLength = 500;
     public const int AvatarUrlMaxLength = 2048;
 
     public int Id { get; private set; }
@@ -18,25 +19,16 @@ public class User : AuditableEntity
 
     public User(string name, string email, string passwordHash, string? avatarUrl = null)
     {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new DomainException(DomainErrors.FieldRequired, "Name is required.");
-        if (string.IsNullOrWhiteSpace(email))
-            throw new DomainException(DomainErrors.FieldRequired, "Email is required.");
-        if (string.IsNullOrWhiteSpace(passwordHash))
-            throw new DomainException(DomainErrors.FieldRequired, "Password hash is required.");
-
-        Name = name.Trim();
-        Email = email.Trim().ToLowerInvariant();
-        PasswordHash = passwordHash;
-        AvatarUrl = avatarUrl;
+        Name = Guard.RequiredText(name, NameMaxLength, nameof(Name));
+        Email = Guard.RequiredText(email, EmailMaxLength, nameof(Email)).ToLowerInvariant();
+        PasswordHash = Guard.RequiredText(passwordHash, PasswordHashMaxLength, nameof(PasswordHash));
+        AvatarUrl = Guard.OptionalText(avatarUrl, AvatarUrlMaxLength, nameof(AvatarUrl));
     }
+
 
     public void UpdateProfile(string name, string? avatarUrl)
     {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new DomainException(DomainErrors.FieldRequired, "Name cannot be empty.");
-        Name = name.Trim();
-
-        AvatarUrl = avatarUrl;
+        Name = Guard.RequiredText(name, NameMaxLength, nameof(Name));
+        AvatarUrl = Guard.OptionalText(avatarUrl, AvatarUrlMaxLength, nameof(AvatarUrl));
     }
 }

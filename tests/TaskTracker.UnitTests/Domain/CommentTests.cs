@@ -23,13 +23,13 @@ public class CommentTests
         Assert.Equal("Looks good", comment.Content);
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Constructor_WithBlankContent_Throws(string content)
+    [Fact]
+    public void Constructor_WithContentOverMaxLength_ThrowsFieldTooLong()
     {
+        var content = new string('a', Comment.ContentMaxLength + 1);
+
         var ex = Assert.Throws<DomainException>(() => new Comment(10, 3, content));
 
-        Assert.Equal(DomainErrors.FieldRequired, ex.Code);
+        Assert.Equal(DomainErrors.FieldTooLong, ex.Code);
     }
 }

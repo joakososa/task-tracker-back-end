@@ -39,10 +39,6 @@ public class Project : AuditableEntity
         _members.Add(new ProjectMember(Id, userId));
     }
 
-    private void SetName(string name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new DomainException(DomainErrors.FieldRequired, "Project name is required.");
-        Name = name.Trim();
-    }
+    private void SetName(string name) =>
+        Name = Guard.RequiredText(name, NameMaxLength, nameof(Name));
 }

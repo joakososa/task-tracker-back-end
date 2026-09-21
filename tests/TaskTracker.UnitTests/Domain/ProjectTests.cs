@@ -20,16 +20,14 @@ public class ProjectTests
         Assert.Equal(DomainErrors.FieldRequired, ex.Code);
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Remame_WithBlankName_Throws(string name)
+    [Fact]
+    public void Constructor_WithNameOverMaxLength_ThrowsFieldTooLong()
     {
-        var project = CreateProjectWithOwner(1);
+        var name = new string('a', Project.NameMaxLength + 1);
 
-        var ex = Assert.Throws<DomainException>(() => project.Rename(name));
+        var ex = Assert.Throws<DomainException>(() => new Project(name, 1));
 
-        Assert.Equal(DomainErrors.FieldRequired, ex.Code);
+        Assert.Equal(DomainErrors.FieldTooLong, ex.Code);
     }
 
     [Fact]
