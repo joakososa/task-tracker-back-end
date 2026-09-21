@@ -4,6 +4,8 @@ public static class DomainErrors
 {
     
     public const string FieldRequired = "FIELD_REQUIRED";
+    public const string FieldTooLong = "FIELD_TOO_LONG";
+
     public static class Project
     {
         public const string InvalidMember = "PROJECT_INVALID_MEMBER";     

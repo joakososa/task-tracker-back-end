@@ -5,20 +5,43 @@ namespace TaskTracker.UnitTests.Domain;
 
 public class UserTests
 {
-    [Theory]
-    [InlineData("", "test@example.com", "PasswordHash")]
-    [InlineData("   ", "test@example.com", "PasswordHash")]
-    [InlineData("Name", "", "PasswordHash")]
-    [InlineData("Name", "   ", "PasswordHash")]
-    [InlineData("Name", "test@example.com", "")]
-    [InlineData("Name", "test@example.com", "   ")]
-    public void Constructor_WithBlankFields_Throws(string name, string email, string passwordHash)
+    [Fact]
+    public void Constructor_WithNameOverMaxLength_ThrowsFieldTooLong()
     {
-        var ex = Assert.Throws<DomainException>(() => new User(name, email, passwordHash));
+        var name = new string('a', User.NameMaxLength + 1);
 
-        Assert.Equal(DomainErrors.FieldRequired, ex.Code);
+        var ex = Assert.Throws<DomainException>(() => new User(name, "test@example.com", "hash"));
+
+        Assert.Equal(DomainErrors.FieldTooLong, ex.Code);
     }
 
+    [Fact]
+    public void Constructor_WithEmailOverMaxLength_ThrowsFieldTooLong()
+    {
+        var email = new string('a', User.EmailMaxLength + 1);
+
+        var ex = Assert.Throws<DomainException>(() => new User("Name", email, "hash"));
+
+        Assert.Equal(DomainErrors.FieldTooLong, ex.Code);
+    }
+
+    [Fact]
+    public void Constructor_WithAvatarUrlOverMaxLength_ThrowsFieldTooLong()
+    {
+        var avatar = new string('a', User.AvatarUrlMaxLength + 1);
+
+        var ex = Assert.Throws<DomainException>(() => new User("Name", "test@example.com", "hash", avatar));
+
+        Assert.Equal(DomainErrors.FieldTooLong, ex.Code);
+    }
+
+    [Fact]
+    public void Constructor_WithBlankAvatarUrl_StoresNull()
+    {
+        var user = new User("Name", "test@example.com", "hash", "   ");
+
+        Assert.Null(user.AvatarUrl);
+    }
     [Theory]
     [InlineData("Name   ", "test@example.com")]
     [InlineData("Name", "tEsT@example.com    ")]

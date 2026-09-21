@@ -56,13 +56,8 @@ public class TaskItem : AuditableEntity
 
     private void SetDetails(string title, string description, TaskPriority priority)
     {
-        if (string.IsNullOrWhiteSpace(title))
-            throw new DomainException(DomainErrors.FieldRequired, "Title is required.");
-        if (string.IsNullOrWhiteSpace(description))
-            throw new DomainException(DomainErrors.FieldRequired, "Description is required.");
-
-        Title = title.Trim();
-        Description = description.Trim();
+        Title = Guard.RequiredText(title, TitleMaxLength, nameof(Title));
+        Description = Guard.RequiredText(description, DescriptionMaxLength, nameof(Description));
         Priority = priority;
     }
 }

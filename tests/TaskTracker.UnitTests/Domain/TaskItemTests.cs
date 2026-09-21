@@ -30,16 +30,24 @@ public class TaskItemTests
         Assert.Equal(TaskPriority.Medium, task.Priority);
     }
 
-    [Theory]
-    [InlineData("", "Description")]
-    [InlineData("   ", "Description")]
-    [InlineData("Title", "")]
-    [InlineData("Title", "   ")]
-    public void Constructor_WithBlankTitleOrDescription_Throws(string title, string description)
+    [Fact]
+    public void Constructor_WithTitleOverMaxLength_ThrowsFieldTooLong()
     {
-        var ex = Assert.Throws<DomainException>(() => new TaskItem(1, title, description));
+        var title = new string('a', TaskItem.TitleMaxLength + 1);
 
-        Assert.Equal(DomainErrors.FieldRequired, ex.Code);
+        var ex = Assert.Throws<DomainException>(() => new TaskItem(1, title, "Description"));
+
+        Assert.Equal(DomainErrors.FieldTooLong, ex.Code);
+    }
+
+    [Fact]
+    public void Constructor_WithDescriptionOverMaxLength_ThrowsFieldTooLong()
+    {
+        var description = new string('a', TaskItem.DescriptionMaxLength + 1);
+
+        var ex = Assert.Throws<DomainException>(() => new TaskItem(1, "Title", description));
+
+        Assert.Equal(DomainErrors.FieldTooLong, ex.Code);
     }
 
     [Theory]
@@ -73,11 +81,26 @@ public class TaskItemTests
     }
 
     [Fact]
-    public void Constructor_TrimsTitleAndDescription()
+    public void Update_WithTitleOverMaxLength_ThrowsFieldTooLongAndKeepsOriginalValues()
     {
-        var task = new TaskItem(1, "  Title  ", "  Description  ");
+        var title = new string('a', TaskItem.TitleMaxLength + 1);
+        var task = CreateTask();
 
+        var ex = Assert.Throws<DomainException>(() => task.Update(title, "Description", TaskPriority.Medium));
+
+        Assert.Equal(DomainErrors.FieldTooLong, ex.Code);
         Assert.Equal("Title", task.Title);
+    }
+
+    [Fact]
+    public void Update_WithDescriptionOverMaxLength_ThrowsFieldTooLongAndKeepsOriginalValues()
+    {
+        var description = new string('a', TaskItem.DescriptionMaxLength + 1);
+        var task = CreateTask();
+
+        var ex = Assert.Throws<DomainException>(() => task.Update("Title", description, TaskPriority.Medium));
+
+        Assert.Equal(DomainErrors.FieldTooLong, ex.Code);
         Assert.Equal("Description", task.Description);
     }
 
@@ -91,21 +114,6 @@ public class TaskItemTests
         Assert.Equal("New title", task.Title);
         Assert.Equal("New description", task.Description);
         Assert.Equal(TaskPriority.High, task.Priority);
-    }
-
-    [Theory]
-    [InlineData("", "Description")]
-    [InlineData("Title", "   ")]
-    public void Update_WithBlankTitleOrDescription_ThrowsAndKeepsOriginalValues(string title, string description)
-    {
-        var task = CreateTask();
-
-        var ex = Assert.Throws<DomainException>(() => task.Update(title, description, TaskPriority.High));
-
-        Assert.Equal(DomainErrors.FieldRequired, ex.Code);
-        Assert.Equal("Title", task.Title);
-        Assert.Equal("Description", task.Description);
-        Assert.Equal(TaskPriority.Medium, task.Priority);
     }
 
     [Fact]

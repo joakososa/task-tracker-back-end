@@ -17,11 +17,8 @@ public class Comment : AuditableEntity
 
     public Comment(int taskItemId, int authorId, string content)
     {
-        if (string.IsNullOrWhiteSpace(content))
-            throw new DomainException(DomainErrors.FieldRequired, "Comment content is required.");
-
         TaskItemId = taskItemId;
         AuthorId = authorId;
-        Content = content.Trim();
+        Content = Guard.RequiredText(content, ContentMaxLength, nameof(Content));
     }
 }

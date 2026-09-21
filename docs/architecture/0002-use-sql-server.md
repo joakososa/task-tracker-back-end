@@ -1,6 +1,6 @@
 # 0002. Utilize SQL Server as primary database engine
 
-* **State:** Accepted
+* **Status:** Accepted
 * **Date:** 2026-09-18
 * **Decision-maker:** Developer Joaquin Sosa
 
