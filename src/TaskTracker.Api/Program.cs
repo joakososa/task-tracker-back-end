@@ -1,3 +1,5 @@
+using TaskTracker.Api.Services;
+using TaskTracker.Application.Common.Interfaces;
 using TaskTracker.Infrastructure;
 using TaskTracker.Infrastructure.Persistence;
 
@@ -7,11 +9,12 @@ var connectionString = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("Connection string 'Default' not found.");
 
 // Add services to the container.
-
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
-builder.Services.AddInfrastructure(connectionString);
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
+builder.Services.AddInfrastructure(connectionString);
 
 var app = builder.Build();
 
