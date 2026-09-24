@@ -780,6 +780,18 @@ components:
           type: string
           description: Descripción legible para humanos sobre el error ocurrido.
           example: Los datos proporcionados no son válidos.
+        errors:
+          type: object
+          description: >
+            Errores de validación por campo (solo en respuestas 400 de validación).
+            Clave = nombre del campo; valor = lista de mensajes.
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            email: ["El email no tiene un formato válido."]
+            password: ["La contraseña debe tener al menos 8 caracteres."]
   responses:
     # Respuestas de error estándar reutilizables
     Unauthorized:
