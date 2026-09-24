@@ -1,7 +1,7 @@
 # Task Tracker — Backend
 
 A Trello-like task management API built from scratch in .NET, used as a hands-on
-project to practice **backend architecture, testing, CI/CD and AWS deployment**.
+project to practice **backend architecture, testing, CI/CD and Azure deployment**.
 
 The application itself is deliberately simple (users, projects, tasks, comments).
 The focus is on everything around it: how it is structured, tested, built,
@@ -17,11 +17,11 @@ deployed and operated.
 - [ ] Integration tests against a real SQL Server using Testcontainers
 - [ ] CI pipeline (build, test, coverage) on GitHub Actions
 - [ ] Containerized API (Docker) and CD pipeline
-- [ ] Deployment to AWS with infrastructure as code
+- [ ] Deployment to Azure with infrastructure as code (AWS later, as a separate exercise)
 - [ ] Caching layer for project membership and project reads
 - [ ] Stored procedures for reporting
 - [ ] Extract a reporting microservice (Python) communicating via events
-- [ ] Serverless component (AWS Lambda) and DynamoDB usage
+- [ ] Serverless component (Azure Functions) and Cosmos DB usage
 
 ## Architecture
 
@@ -54,7 +54,7 @@ The compiler enforces it: Domain cannot reference EF Core even by accident.
 | Testing | xUnit, Testcontainers |
 | Local infra | Docker Compose |
 | CI/CD | GitHub Actions *(planned)* |
-| Cloud | AWS *(planned)* |
+| Cloud | Azure *(planned)* |
 
 ## Running locally
 

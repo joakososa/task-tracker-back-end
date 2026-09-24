@@ -4,9 +4,7 @@ Guidance for AI-assisted sessions in this repository. Humans: the README has the
 
 ## What this is
 
-A learning project: a Trello-like task API in .NET built from scratch to practice
-backend architecture, testing, CI/CD and AWS. The app is deliberately simple; the
-engineering around it is the point. Public repo, portfolio quality expected.
+A learning project: a Trello-like task API in .NET built from scratch to practice backend architecture, testing, CI/CD and Azure. The app is deliberately simple; the engineering around it is the point. Public repo, portfolio quality expected.
 
 ## Commands
 
@@ -65,14 +63,14 @@ Inspect the DB: `docker exec tasktracker-sql /opt/mssql-tools18/bin/sqlcmd -S lo
 2. Unit and integration tests (in progress)
 3. SQL Server as primary DB ✅
 4. CI/CD pipeline
-5. Deploy to AWS (infrastructure as code; free plan, budget alarm first)
+5. Deploy to Azure (infrastructure as code; free account, budget alert first). AWS later, possibly from a fork
 6. Cache (project membership + project reads, short TTL + explicit invalidation)
 7. Split into / add a microservice (likely Python)
 8. Service-to-service communication
 9. Stored procedures (reporting)
-10. DynamoDB
+10. Cosmos DB (free tier)
 11. MongoDB
-12. Something serverless
+12. Something serverless (Azure Functions)
 
 Priorities: SQL Server depth and CI/CD first. Functional scope: `docs/specs.md` (RF-01..RF-24).
 
