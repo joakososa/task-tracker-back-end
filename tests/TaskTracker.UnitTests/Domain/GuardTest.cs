@@ -12,7 +12,7 @@ public class GuardTests
     {
         var ex = Assert.Throws<DomainException>(() => Guard.RequiredText(value, 10, "Field"));
 
-        Assert.Equal(DomainErrors.FieldRequired, ex.Code);
+        Assert.Equal("FIELD_REQUIRED", ex.Code);
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public class GuardTests
     {
         var ex = Assert.Throws<DomainException>(() => Guard.RequiredText("abcdef", 5, "Field"));
 
-        Assert.Equal(DomainErrors.FieldTooLong, ex.Code);
+        Assert.Equal("FIELD_TOO_LONG", ex.Code);
     }
 
     [Fact]
@@ -71,6 +71,6 @@ public class GuardTests
     {
         var ex = Assert.Throws<DomainException>(() => Guard.OptionalText("abcdef", 5, "Field"));
 
-        Assert.Equal(DomainErrors.FieldTooLong, ex.Code);
+        Assert.Equal("FIELD_TOO_LONG", ex.Code);
     }
 }

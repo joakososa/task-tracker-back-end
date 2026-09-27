@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
 using TaskTracker.Domain.Entities;
+using TaskTracker.IntegrationTests.Fakes;
 using TaskTracker.IntegrationTests.Fixtures;
 
 namespace TaskTracker.IntegrationTests.Persistence;
@@ -15,7 +16,7 @@ public class AuditInterceptorTests(SqlServerFixture fixture)
     {
         var clock = new FakeTimeProvider(T0);
         await using var db = fixture.CreateDbContext(currentUserId: 42, clock);
-        var user = new User("U", $"{Guid.NewGuid():N}@example.com", "hash");
+        var user = new User("U", $"{Guid.NewGuid():N}@example.com", "password", new FakePasswordHasher());
 
         db.Users.Add(user);
         await db.SaveChangesAsync();
@@ -29,7 +30,7 @@ public class AuditInterceptorTests(SqlServerFixture fixture)
     public async Task SaveChanges_OnInsertWithoutCurrentUser_LeavesCreatedByNull()
     {
         await using var db = fixture.CreateDbContext(currentUserId: null);
-        var user = new User("U", $"{Guid.NewGuid():N}@example.com", "hash");
+        var user = new User("U", $"{Guid.NewGuid():N}@example.com", "password", new FakePasswordHasher());
 
         db.Users.Add(user);
         await db.SaveChangesAsync();
@@ -42,7 +43,7 @@ public class AuditInterceptorTests(SqlServerFixture fixture)
     {
         var clock = new FakeTimeProvider(T0);
         await using var db = fixture.CreateDbContext(currentUserId: 42, clock);
-        var user = new User("U", $"{Guid.NewGuid():N}@example.com", "hash");
+        var user = new User("U", $"{Guid.NewGuid():N}@example.com", "password", new FakePasswordHasher());
         db.Users.Add(user);
         await db.SaveChangesAsync();
 
@@ -62,7 +63,7 @@ public class AuditInterceptorTests(SqlServerFixture fixture)
         int userId;
         await using (var db = fixture.CreateDbContext(currentUserId: 42))
         {
-            var user = new User("U", email, "hash");
+            var user = new User("U", email, "password", new FakePasswordHasher());
             db.Users.Add(user);
             await db.SaveChangesAsync();
             userId = user.Id;

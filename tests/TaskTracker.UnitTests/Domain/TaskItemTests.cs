@@ -37,7 +37,7 @@ public class TaskItemTests
 
         var ex = Assert.Throws<DomainException>(() => new TaskItem(1, title, "Description"));
 
-        Assert.Equal(DomainErrors.FieldTooLong, ex.Code);
+        Assert.Equal("FIELD_TOO_LONG", ex.Code);
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public class TaskItemTests
 
         var ex = Assert.Throws<DomainException>(() => new TaskItem(1, "Title", description));
 
-        Assert.Equal(DomainErrors.FieldTooLong, ex.Code);
+        Assert.Equal("FIELD_TOO_LONG", ex.Code);
     }
 
     [Theory]
@@ -76,7 +76,7 @@ public class TaskItemTests
 
         var ex = Assert.Throws<DomainException>(() => task.ChangeState(to));
 
-        Assert.Equal(DomainErrors.TaskItem.InvalidStateTransition, ex.Code);
+        Assert.Equal("TASK_INVALID_STATE_TRANSITION", ex.Code);
         Assert.Equal(from, task.State);
     }
 
@@ -88,7 +88,7 @@ public class TaskItemTests
 
         var ex = Assert.Throws<DomainException>(() => task.Update(title, "Description", TaskPriority.Medium));
 
-        Assert.Equal(DomainErrors.FieldTooLong, ex.Code);
+        Assert.Equal("FIELD_TOO_LONG", ex.Code);
         Assert.Equal("Title", task.Title);
     }
 
@@ -100,7 +100,7 @@ public class TaskItemTests
 
         var ex = Assert.Throws<DomainException>(() => task.Update("Title", description, TaskPriority.Medium));
 
-        Assert.Equal(DomainErrors.FieldTooLong, ex.Code);
+        Assert.Equal("FIELD_TOO_LONG", ex.Code);
         Assert.Equal("Description", task.Description);
     }
 

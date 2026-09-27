@@ -12,9 +12,9 @@ deployed and operated.
 - [x] Design the API contract first (OpenAPI) from written functional requirements
 - [x] Clean Architecture solution layout enforced by project references
 - [x] Domain model with unit tests (xUnit)
-- [ ] EF Core + SQL Server with migrations, Fluent API configurations and audit fields
+- [x] EF Core + SQL Server with migrations, Fluent API configurations and audit fields
 - [ ] JWT authentication and resource-based authorization (project membership)
-- [ ] Integration tests against a real SQL Server using Testcontainers
+- [x] Integration tests against a real SQL Server using Testcontainers
 - [ ] CI pipeline (build, test, coverage) on GitHub Actions
 - [ ] Containerized API (Docker) and CD pipeline
 - [ ] Deployment to Azure with infrastructure as code (AWS later, as a separate exercise)
@@ -91,8 +91,12 @@ Smaller, non-obvious choices are noted here until they deserve one.
 - **Rich domain entities.** Rules such as task state transitions and project
   membership live in the entities and are covered by unit tests; use cases
   orchestrate, they do not decide.
-- **Domain errors carry a code**, matching the `Error.code` in the OpenAPI
-  contract. The API layer maps codes to HTTP status; Domain knows nothing about HTTP.
+- **Domain errors carry a code and a kind** (`Validation`, `Conflict`, `NotFound`,
+  `Forbidden`). The code matches `Error.code` in the OpenAPI contract; the API maps
+  the kind to an HTTP status, so Domain knows nothing about HTTP (ADR 0007).
+- **`User` hashes its own password.** It receives the plain password and a Domain
+  `IPasswordHasher` (implemented in Infrastructure with Identity's PBKDF2 hasher), so
+  the password policy is an entity rule and no use case can skip it.
 - **Enums in SQL Server, two ways on purpose.** `TaskState` is a lookup table
   seeded from the enum (FK-enforced); `TaskPriority` is a string column with a
   `CHECK` constraint. Both are valid; having both makes the trade-off visible.

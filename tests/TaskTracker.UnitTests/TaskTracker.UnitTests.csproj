@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\TaskTracker.Application\TaskTracker.Application.csproj" />
+    <ProjectReference Include="..\..\src\TaskTracker.Api\TaskTracker.Api.csproj" />
   </ItemGroup>
 
 </Project>

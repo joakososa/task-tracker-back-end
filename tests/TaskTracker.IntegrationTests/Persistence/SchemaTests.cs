@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using TaskTracker.Domain.Entities;
 using TaskTracker.Domain.Enums;
 using TaskTracker.Infrastructure.Persistence;
+using TaskTracker.IntegrationTests.Fakes;
 using TaskTracker.IntegrationTests.Fixtures;
 
 namespace TaskTracker.IntegrationTests.Persistence;
@@ -97,7 +98,7 @@ public class SchemaTests(SqlServerFixture fixture)
 
     private static async Task<int> InsertUserAsync(AppDbContext db, string email)
     {
-        var user = new User("U", email, "hash");
+        var user = new User("U", email, "password", new FakePasswordHasher());
         db.Users.Add(user);
         await db.SaveChangesAsync();
         return user.Id;
