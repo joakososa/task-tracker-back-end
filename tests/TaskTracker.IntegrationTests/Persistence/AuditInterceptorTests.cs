@@ -6,8 +6,8 @@ using TaskTracker.IntegrationTests.Fixtures;
 
 namespace TaskTracker.IntegrationTests.Persistence;
 
-[Collection(SqlServerCollection.Name)]
-public class AuditInterceptorTests(SqlServerFixture fixture)
+[Collection(IntegrationCollection.Name)]
+public class AuditInterceptorTests(IntegrationFixture fixture)
 {
     private static readonly DateTimeOffset T0 = new(2026, 1, 15, 10, 0, 0, TimeSpan.Zero);
 

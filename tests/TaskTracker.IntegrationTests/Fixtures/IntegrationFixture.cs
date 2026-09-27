@@ -9,13 +9,19 @@ namespace TaskTracker.IntegrationTests.Fixtures;
 /// <summary>
 /// Starts one SQL Server container for the whole test run, applies the EF migrations once,
 /// and hands out fresh <see cref="AppDbContext"/> instances pointing at it.
+/// It also owns the in-memory Api and the database reset, one of each per run
+/// (xUnit v2 collection fixtures cannot depend on each other).
 /// </summary>
-public sealed class SqlServerFixture : IAsyncLifetime
+public sealed class IntegrationFixture : IAsyncLifetime
 {
     private readonly MsSqlContainer _container =
         new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest").Build();
 
+    private DatabaseReset _reset = null!;
+
     public string ConnectionString => _container.GetConnectionString();
+
+    public ApiFactory Api { get; private set; } = null!;
 
     public async Task InitializeAsync()
     {
@@ -23,9 +29,18 @@ public sealed class SqlServerFixture : IAsyncLifetime
 
         await using var db = CreateDbContext();
         await db.Database.MigrateAsync();
+
+        _reset = await DatabaseReset.CreateAsync(ConnectionString, db);
+        Api = new ApiFactory(ConnectionString);
     }
 
-    public Task DisposeAsync() => _container.DisposeAsync().AsTask();
+    public async Task DisposeAsync()
+    {
+        await Api.DisposeAsync();
+        await _container.DisposeAsync();
+    }
+
+    public Task ResetDatabaseAsync() => _reset.ResetAsync();
 
     public AppDbContext CreateDbContext(int? currentUserId = null, TimeProvider? clock = null)
     {
@@ -45,7 +60,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
 }
 
 [CollectionDefinition(Name)]
-public sealed class SqlServerCollection : ICollectionFixture<SqlServerFixture>
+public sealed class IntegrationCollection : ICollectionFixture<IntegrationFixture>
 {
-    public const string Name = "SqlServer";
+    public const string Name = "Integration";
 }

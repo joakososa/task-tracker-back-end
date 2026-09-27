@@ -81,10 +81,10 @@ Priorities: SQL Server depth and CI/CD first. Functional scope: `docs/specs.md` 
 Step 3 (Domain + EF Core) **complete**:
 - 3.1 Domain entities + unit tests ✅
 - 3.2 EF configurations, `InitialCreate` migration, `docs/initial-schema.sql` ✅
-- 3.3 Testcontainers fixture (`SqlServerFixture`, one container per run) + schema tests ✅
+- 3.3 Testcontainers fixture (`SqlServerFixture`, now `IntegrationFixture`; one container per run) + schema tests ✅
 - 3.4 `AuditInterceptor` (CreatedAt/UpdatedAt/CreatedBy via `ICurrentUser` + `TimeProvider`) ✅
 
-Test suite: 81 unit + 10 integration, all green.
+Test suite: 81 unit + 14 integration, all green.
 
 **Step 4 (authentication) in progress** on branch `register-user`:
 - 4.1 Registration use case ✅ — `RegisterUserHandler` (`ICommandHandler<,>`), `RegisterUserCommandValidator`,
@@ -92,11 +92,16 @@ Test suite: 81 unit + 10 integration, all green.
   `User` hashes its own password via Domain `IPasswordHasher` (policy 8–128, no trim).
 - 4.2 Infrastructure ✅ — `UserRepository`, `AppDbContext : IUnitOfWork`, `PasswordHasher` (Identity's PBKDF2).
 - 4.3 Error handling ✅ — `DomainError`/`ErrorKind`, `ErrorMapper` + `GlobalExceptionHandler`,
-  model-binding 400s in the same shape (ADR 0007, still **Proposed** until reviewed).
+  model-binding 400s in the same shape (ADR 0007, Accepted).
+- 4.4 `POST /users` ✅ — `UsersController` (201, no `Location`: no `GET /users/{id}` in the contract).
+  HTTP tests: `ApiFactory` (`WebApplicationFactory<Program>`, connection string via `UseSetting`),
+  `DatabaseReset` (Respawn, keeps `__EFMigrationsHistory` + `ILookupTable` entities), `ApiTestBase` resets
+  before each test. `IntegrationFixture` (renamed from `SqlServerFixture`, collection `Integration`) owns container, factory and
+  reset, one each per run: xUnit v2 fixtures cannot receive other fixtures.
+  Validators are registered with Scrutor in `AddApplication()` (were missing; caught by the first HTTP test).
 
-**Next:** `UsersController` `POST /users` + first HTTP integration test (`WebApplicationFactory` on the
-Testcontainers DB, Respawn with `ILookupTable` marker, response validated against `docs/openapi.yaml`:
-provider-side contract testing). Then `POST /auth/login` (JWT, `ClaimTypes.NameIdentifier` = user id;
+**Next:** validate HTTP responses against `docs/openapi.yaml` (provider-side contract testing) with
+NSwag.Core.Yaml (loads the spec, resolves `$ref`/`allOf`) + NJsonSchema validation. Then `POST /auth/login` (JWT, `ClaimTypes.NameIdentifier` = user id;
 needs `IPasswordHasher.Verify`), then `GET/PUT /users/me`.
 After registration: `AuditableEntity` setters → private (interceptor writes via `entry.Property`), and
 split `TimestampedEntity` (CreatedAt/UpdatedAt) from `AuditableEntity` (+CreatedBy) so `User` drops

@@ -8,8 +8,8 @@ using TaskTracker.IntegrationTests.Fixtures;
 
 namespace TaskTracker.IntegrationTests.Persistence;
 
-[Collection(SqlServerCollection.Name)]
-public class SchemaTests(SqlServerFixture fixture)
+[Collection(IntegrationCollection.Name)]
+public class SchemaTests(IntegrationFixture fixture)
 {
     [Fact]
     public async Task Model_HasNoPendingMigrations()

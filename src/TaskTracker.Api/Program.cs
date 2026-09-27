@@ -13,7 +13,10 @@ var connectionString = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("Connection string 'Default' not found.");
 
 // Add services to the container.
-builder.Services.AddControllers()
+builder.Services.AddControllers(o =>
+        // Non-nullable strings are not implicitly [Required]: a missing field reaches the validator, so the client
+        // gets it together with every other field error (ADR 0007). Model binding only rejects malformed input.
+        o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true)
     .AddJsonOptions(o => o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)
     // Model binding failures (malformed JSON, wrong types) use the same Error shape as every other 400.
     .ConfigureApiBehaviorOptions(o => o.InvalidModelStateResponseFactory =
@@ -47,3 +50,6 @@ app.MapControllers();
 app.MapHealthChecks("/health");
 
 app.Run();
+
+// Makes the compiler-generated Program class public so tests can reference it (WebApplicationFactory<Program>).
+public partial class Program;

@@ -94,6 +94,11 @@ Smaller, non-obvious choices are noted here until they deserve one.
 - **Domain errors carry a code and a kind** (`Validation`, `Conflict`, `NotFound`,
   `Forbidden`). The code matches `Error.code` in the OpenAPI contract; the API maps
   the kind to an HTTP status, so Domain knows nothing about HTTP (ADR 0007).
+- **Missing fields are reported by the validator, not by model binding.**
+  `SuppressImplicitRequiredAttributeForNonNullableReferenceTypes` stops ASP.NET Core
+  from treating non-nullable strings as `[Required]`, so a missing `name` comes back
+  together with every other field error (ADR 0007). Model binding only rejects
+  malformed JSON and wrong types.
 - **`User` hashes its own password.** It receives the plain password and a Domain
   `IPasswordHasher` (implemented in Infrastructure with Identity's PBKDF2 hasher), so
   the password policy is an entity rule and no use case can skip it.
