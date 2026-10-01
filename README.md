@@ -99,6 +99,10 @@ Smaller, non-obvious choices are noted here until they deserve one.
   from treating non-nullable strings as `[Required]`, so a missing `name` comes back
   together with every other field error (ADR 0007). Model binding only rejects
   malformed JSON and wrong types.
+- **HTTP tests check responses against the contract.** Besides asserting the status,
+  each test validates the response against `docs/openapi.yaml` (operation, documented
+  status, body schema) with NSwag + NJsonSchema, so the contract cannot silently drift
+  from the implementation.
 - **`User` hashes its own password.** It receives the plain password and a Domain
   `IPasswordHasher` (implemented in Infrastructure with Identity's PBKDF2 hasher), so
   the password policy is an entity rule and no use case can skip it.

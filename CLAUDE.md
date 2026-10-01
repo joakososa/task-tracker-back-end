@@ -84,7 +84,7 @@ Step 3 (Domain + EF Core) **complete**:
 - 3.3 Testcontainers fixture (`SqlServerFixture`, now `IntegrationFixture`; one container per run) + schema tests ✅
 - 3.4 `AuditInterceptor` (CreatedAt/UpdatedAt/CreatedBy via `ICurrentUser` + `TimeProvider`) ✅
 
-Test suite: 81 unit + 14 integration, all green.
+Test suite: 81 unit + 16 integration, all green.
 
 **Step 4 (authentication) in progress** on branch `register-user`:
 - 4.1 Registration use case ✅ — `RegisterUserHandler` (`ICommandHandler<,>`), `RegisterUserCommandValidator`,
@@ -99,9 +99,12 @@ Test suite: 81 unit + 14 integration, all green.
   before each test. `IntegrationFixture` (renamed from `SqlServerFixture`, collection `Integration`) owns container, factory and
   reset, one each per run: xUnit v2 fixtures cannot receive other fixtures.
   Validators are registered with Scrutor in `AddApplication()` (were missing; caught by the first HTTP test).
+- 4.5 Provider-side contract testing ✅ — `OpenApiContract.AssertResponseMatchesAsync(response)` (NSwag.Core.Yaml
+  + NJsonSchema) checks every HTTP test response against `docs/openapi.yaml` (copied to the test output):
+  operation exists, status is documented, body matches the schema. Has its own tests (`OpenApiContractTests`).
+  Every new HTTP test should call it after asserting the status.
 
-**Next:** validate HTTP responses against `docs/openapi.yaml` (provider-side contract testing) with
-NSwag.Core.Yaml (loads the spec, resolves `$ref`/`allOf`) + NJsonSchema validation. Then `POST /auth/login` (JWT, `ClaimTypes.NameIdentifier` = user id;
+**Next:** `POST /auth/login` (JWT, `ClaimTypes.NameIdentifier` = user id;
 needs `IPasswordHasher.Verify`), then `GET/PUT /users/me`.
 After registration: `AuditableEntity` setters → private (interceptor writes via `entry.Property`), and
 split `TimestampedEntity` (CreatedAt/UpdatedAt) from `AuditableEntity` (+CreatedBy) so `User` drops

@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text;
 using TaskTracker.Api.Errors;
 using TaskTracker.Application.Users;
+using TaskTracker.IntegrationTests.Contract;
 using TaskTracker.IntegrationTests.Fixtures;
 
 namespace TaskTracker.IntegrationTests.Users;
@@ -21,6 +22,7 @@ public class RegisterUserTests(IntegrationFixture fixture) : ApiTestBase(fixture
         });
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        await OpenApiContract.AssertResponseMatchesAsync(response);
         var user = await response.Content.ReadFromJsonAsync<UserDto>();
         Assert.NotNull(user);
         Assert.True(user.Id > 0);
@@ -38,6 +40,7 @@ public class RegisterUserTests(IntegrationFixture fixture) : ApiTestBase(fixture
         var response = await Client.PostAsJsonAsync("/users", body);
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        await OpenApiContract.AssertResponseMatchesAsync(response);
         var error = await response.Content.ReadFromJsonAsync<ErrorResponse>();
         Assert.Equal("USER_EMAIL_ALREADY_EXISTS", error?.Code);
     }
@@ -48,6 +51,7 @@ public class RegisterUserTests(IntegrationFixture fixture) : ApiTestBase(fixture
         var response = await Client.PostAsJsonAsync("/users", new { email = "ana@example.com", password = "short" });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await OpenApiContract.AssertResponseMatchesAsync(response);
         var error = await response.Content.ReadFromJsonAsync<ErrorResponse>();
         Assert.Equal("INVALID_INPUT", error?.Code);
         Assert.Equal(["name", "password"], error?.Errors?.Keys.Order());
@@ -61,6 +65,7 @@ public class RegisterUserTests(IntegrationFixture fixture) : ApiTestBase(fixture
         var response = await Client.PostAsync("/users", content);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await OpenApiContract.AssertResponseMatchesAsync(response);
         var error = await response.Content.ReadFromJsonAsync<ErrorResponse>();
         Assert.Equal("INVALID_INPUT", error?.Code);
     }

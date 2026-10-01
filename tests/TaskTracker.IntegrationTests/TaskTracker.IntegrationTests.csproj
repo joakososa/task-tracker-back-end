@@ -12,6 +12,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.*" />
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.*" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="NSwag.Core.Yaml" Version="14.7.1" />
     <PackageReference Include="Testcontainers.MsSql" Version="4.15.0" />
     <PackageReference Include="Respawn" Version="7.0.0" />
     <PackageReference Include="xunit" Version="2.9.2" />
@@ -20,6 +21,11 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The contract the HTTP responses are validated against (Contract/OpenApiContract). -->
+    <None Include="..\..\docs\openapi.yaml" Link="openapi.yaml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
