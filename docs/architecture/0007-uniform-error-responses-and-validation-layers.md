@@ -28,6 +28,7 @@ Every error response uses the contract's `Error` schema, serialized from `ErrorR
 |---|---|---|---|
 | Model binding | 400 | `INVALID_INPUT` | per field (`$.email` → `email`; missing body → `body`) |
 | `ValidationException` | 400 | `INVALID_INPUT` | per field, camelCase, all failures |
+| `AuthenticationFailedException` (Application) | 401 | `INVALID_CREDENTIALS` | none; same message for unknown email and wrong password |
 | `DomainException` | from its `ErrorKind` | the exception's code | none |
 | Anything else | 500 | `INTERNAL_ERROR` | none; the message and stack trace are logged, never returned |
 

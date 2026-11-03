@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using IdentityPasswordHasher = Microsoft.AspNetCore.Identity.PasswordHasher<TaskTracker.Domain.Entities.User>;
 
 namespace TaskTracker.Infrastructure.Security;
@@ -9,4 +10,8 @@ public class PasswordHasher : Domain.Services.IPasswordHasher
 
     // The default Identity implementation ignores the user argument; the User is still being constructed here.
     public string HashPassword(string password) => _inner.HashPassword(null!, password);
+
+    // SuccessRehashNeeded still means the password is correct; rehashing with newer parameters is not done yet.
+    public bool Verify(string hash, string password) =>
+        _inner.VerifyHashedPassword(null!, hash, password) != PasswordVerificationResult.Failed;
 }

@@ -2,6 +2,7 @@ using System.Text.Json;
 using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using TaskTracker.Application.Common.Exceptions;
 using TaskTracker.Domain.Common;
 
 namespace TaskTracker.Api.Errors;
@@ -16,6 +17,9 @@ public static class ErrorMapper
     {
         ValidationException validation => (StatusCodes.Status400BadRequest, new ErrorResponse(
             InvalidInputCode, "One or more fields are invalid.", GroupByField(validation.Errors))),
+
+        AuthenticationFailedException => (StatusCodes.Status401Unauthorized, new ErrorResponse(
+            AuthenticationFailedException.Code, exception.Message)),
 
         DomainException domain => (StatusFor(domain.Kind), new ErrorResponse(domain.Code, domain.Message)),
 

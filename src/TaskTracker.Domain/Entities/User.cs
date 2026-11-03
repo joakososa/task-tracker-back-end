@@ -43,6 +43,8 @@ public class User : AuditableEntity
         return Guard.RequiredText(hasher.HashPassword(password), PasswordHashMaxLength, nameof(PasswordHash));
     }
 
+    public bool VerifyPassword(string password, IPasswordHasher hasher) => hasher.Verify(PasswordHash, password);
+
     public void UpdateProfile(string name, string? avatarUrl)
     {
         Name = Guard.RequiredText(name, NameMaxLength, nameof(Name));

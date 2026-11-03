@@ -118,4 +118,20 @@ public class UserTests
 
         Assert.Equal("FIELD_REQUIRED", ex.Code);
     }
+
+    [Fact]
+    public void VerifyPassword_WithCorrectPassword_ReturnsTrue()
+    {
+        var user = new User("Name", "test@example.com", "securepassword", Hasher);
+
+        Assert.True(user.VerifyPassword("securepassword", Hasher));
+    }
+
+    [Fact]
+    public void VerifyPassword_WithWrongPassword_ReturnsFalse()
+    {
+        var user = new User("Name", "test@example.com", "securepassword", Hasher);
+
+        Assert.False(user.VerifyPassword("wrongpassword", Hasher));
+    }
 }

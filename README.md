@@ -105,7 +105,7 @@ Smaller, non-obvious choices are noted here until they deserve one.
   from the implementation.
 - **`User` hashes its own password.** It receives the plain password and a Domain
   `IPasswordHasher` (implemented in Infrastructure with Identity's PBKDF2 hasher), so
-  the password policy is an entity rule and no use case can skip it.
+  the password policy is an entity rule and no use case can skip it (ADR 0008).
 - **Enums in SQL Server, two ways on purpose.** `TaskState` is a lookup table
   seeded from the enum (FK-enforced); `TaskPriority` is a string column with a
   `CHECK` constraint. Both are valid; having both makes the trade-off visible.

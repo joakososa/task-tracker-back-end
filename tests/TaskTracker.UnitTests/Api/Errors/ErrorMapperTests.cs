@@ -2,6 +2,7 @@ using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using TaskTracker.Api.Errors;
+using TaskTracker.Application.Common.Exceptions;
 using TaskTracker.Domain.Common;
 
 namespace TaskTracker.UnitTests.Api.Errors;
@@ -49,6 +50,17 @@ public class ErrorMapperTests
 
         Assert.Equal("SOME_CONFLICT", body.Code);
         Assert.Equal("It clashes.", body.Message);
+        Assert.Null(body.Errors);
+    }
+
+    [Fact]
+    public void Map_AuthenticationFailedException_Returns401WithInvalidCredentialsCode()
+    {
+        var (status, body) = ErrorMapper.Map(new AuthenticationFailedException());
+
+        Assert.Equal(401, status);
+        Assert.Equal("INVALID_CREDENTIALS", body.Code);
+        Assert.Equal("Invalid email or password.", body.Message);
         Assert.Null(body.Errors);
     }
 
