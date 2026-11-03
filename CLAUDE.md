@@ -122,4 +122,6 @@ registration (event → queue → Azure Function → Azure Communication Service
 Bootstrap and first-time code were written by the developer with AI guidance. Since step 4 the AI
 proposes each change (files, what and why), waits for the developer's OK, then writes it; the developer
 reviews every change and makes all commits. Design decisions are discussed and recorded in ADRs; the AI
-is listed as "Consulted" where it took part. The AI never commits or pushes.
+is listed as "Consulted" where it took part. The AI never commits or pushes: it gives the developer the
+ready-to-run `git add` / `git commit` commands, message included. The AI never creates files (code, docs,
+artifacts, memory) without the developer's explicit permission.
