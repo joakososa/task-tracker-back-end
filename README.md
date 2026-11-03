@@ -61,7 +61,7 @@ The compiler enforces it: Domain cannot reference EF Core even by accident.
 Prerequisites: .NET 9 SDK, Docker.
 
 ```bash
-docker compose up -d                                   # SQL Server 2022 on localhost:1433
+docker compose up -d --wait                            # SQL Server 2022 on localhost:1433
 dotnet run --project src/TaskTracker.Api --launch-profile http
 curl http://localhost:5000/health                      # → Healthy
 ```

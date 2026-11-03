@@ -9,7 +9,7 @@ A learning project: a Trello-like task API in .NET built from scratch to practic
 ## Commands
 
 ```bash
-docker compose up -d                                       # SQL Server 2022 (localhost:1433, sa / see compose)
+docker compose up -d --wait                                # SQL Server 2022 (localhost:1433, sa / see compose)
 dotnet build
 dotnet test tests/TaskTracker.UnitTests                    # fast, no Docker
 dotnet test                                                # includes integration tests (Docker required)
