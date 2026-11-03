@@ -39,6 +39,8 @@ Inspect the DB: `docker exec tasktracker-sql /opt/mssql-tools18/bin/sqlcmd -S lo
   belong in Application use cases, not in the entity.
 - Domain errors: throw `DomainException(DomainErrors.X, message)`; each `DomainError` has a `Code` and an `ErrorKind`.
   Codes match `Error.code` in `docs/openapi.yaml`. Api (`ErrorMapper`) maps kind → HTTP status; Domain never knows HTTP.
+  Failures that are not entity rules are Application exceptions mapped by `ErrorMapper`
+  (`AuthenticationFailedException` → 401 `INVALID_CREDENTIALS`).
   Every error response uses `ErrorResponse` (the contract `Error` schema), including model-binding 400s.
 - Persistence: one `IEntityTypeConfiguration<T>` per entity in `Infrastructure/Persistence/Configurations`.
   Nullability comes from the entity (no `IsRequired()`); max lengths come from Domain constants.
@@ -87,7 +89,7 @@ Step 3 (Domain + EF Core) **complete**:
 - 3.3 Testcontainers fixture (`SqlServerFixture`, now `IntegrationFixture`; one container per run) + schema tests ✅
 - 3.4 `AuditInterceptor` (CreatedAt/UpdatedAt/CreatedBy via `ICurrentUser` + `TimeProvider`) ✅
 
-Test suite: 81 unit + 16 integration, all green.
+Test suite: 94 unit + 20 integration, all green.
 
 **Step 4 (authentication) in progress** on branch `register-user`:
 - 4.1 Registration use case ✅ — `RegisterUserHandler` (`ICommandHandler<,>`), `RegisterUserCommandValidator`,
@@ -106,9 +108,15 @@ Test suite: 81 unit + 16 integration, all green.
   + NJsonSchema) checks every HTTP test response against `docs/openapi.yaml` (copied to the test output):
   operation exists, status is documented, body matches the schema. Has its own tests (`OpenApiContractTests`).
   Every new HTTP test should call it after asserting the status.
+- 4.6 `POST /auth/login` ✅ — `LoginHandler` (same `AuthenticationFailedException` for unknown email and wrong
+  password; timing not equalized on purpose, `POST /users` already reveals emails with a 409),
+  `User.VerifyPassword` (ADR 0008), `JwtTokenService` (HS256, `sub` = user id, expiry from `TimeProvider`),
+  `JwtOptions` validated on start; `SigningKey` in user-secrets, test key set in `ApiFactory`.
+  The Api only issues tokens so far: nothing validates them yet.
 
-**Next:** `POST /auth/login` (JWT, `ClaimTypes.NameIdentifier` = user id;
-needs `IPasswordHasher.Verify`), then `GET/PUT /users/me`.
+**Next:** `GET/PUT /users/me`: `AddJwtBearer` with the same `JwtOptions` (default `MapInboundClaims` turns
+`sub` into `ClaimTypes.NameIdentifier` for `HttpContextCurrentUser`), and the 401 challenge written as
+`ErrorResponse`.
 After registration: `AuditableEntity` setters → private (interceptor writes via `entry.Property`), and
 split `TimestampedEntity` (CreatedAt/UpdatedAt) from `AuditableEntity` (+CreatedBy) so `User` drops
 `CreatedBy` (new migration), mirroring `TimestampedDto`/`AuditedDto` in Application.
