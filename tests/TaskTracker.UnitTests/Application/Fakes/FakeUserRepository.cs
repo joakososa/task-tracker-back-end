@@ -12,6 +12,11 @@ public class FakeUserRepository : IUserRepository
         return Task.FromResult(this._users.Any(u => u.Email.Equals(email, StringComparison.Ordinal)));
     }
 
+    public Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(this._users.SingleOrDefault(u => u.Email.Equals(email, StringComparison.Ordinal)));
+    }
+
     public void Add(User user)
     {
         this._users.Add(user);

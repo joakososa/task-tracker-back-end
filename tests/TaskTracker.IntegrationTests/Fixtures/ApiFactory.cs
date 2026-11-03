@@ -13,5 +13,7 @@ public sealed class ApiFactory(string connectionString) : WebApplicationFactory<
         // Program reads the connection string right after CreateBuilder. UseSetting is applied by then;
         // ConfigureAppConfiguration is not, and the tests would silently run against the local docker-compose DB.
         builder.UseSetting("ConnectionStrings:Default", connectionString);
+        // The real key lives in user-secrets, which a CI machine does not have.
+        builder.UseSetting("Jwt:SigningKey", "integration-test-signing-key-at-least-32-bytes");
     }
 }

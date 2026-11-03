@@ -62,6 +62,7 @@ Prerequisites: .NET 9 SDK, Docker.
 
 ```bash
 docker compose up -d --wait                            # SQL Server 2022 on localhost:1433
+dotnet user-secrets set "Jwt:SigningKey" "$(openssl rand -base64 48)" --project src/TaskTracker.Api   # once
 dotnet run --project src/TaskTracker.Api --launch-profile http
 curl http://localhost:5000/health                      # → Healthy
 ```

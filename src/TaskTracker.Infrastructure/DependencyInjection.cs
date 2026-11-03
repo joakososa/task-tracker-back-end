@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using TaskTracker.Application.Auth;
 using TaskTracker.Application.Common.Interfaces;
 using TaskTracker.Application.Users;
 using TaskTracker.Domain.Services;
@@ -27,6 +28,13 @@ public static class DependencyInjection
         services.AddScoped<IUserRepository, UserRepository>();
 
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
+
+        // Fails at startup, not at the first login, when the Jwt section is missing or the key is too short.
+        services.AddOptions<JwtOptions>()
+            .BindConfiguration(JwtOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        services.AddSingleton<ITokenService, JwtTokenService>();
 
         return services;
     }

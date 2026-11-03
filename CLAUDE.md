@@ -10,6 +10,7 @@ A learning project: a Trello-like task API in .NET built from scratch to practic
 
 ```bash
 docker compose up -d --wait                                # SQL Server 2022 (localhost:1433, sa / see compose)
+dotnet user-secrets set "Jwt:SigningKey" "$(openssl rand -base64 48)" --project src/TaskTracker.Api   # once; the Api will not start without it
 dotnet build
 dotnet test tests/TaskTracker.UnitTests                    # fast, no Docker
 dotnet test                                                # includes integration tests (Docker required)
@@ -57,6 +58,8 @@ Inspect the DB: `docker exec tasktracker-sql /opt/mssql-tools18/bin/sqlcmd -S lo
   changed while it has no consumers; record why in the commit.
 - Significant decisions get an ADR in `docs/architecture/` (Nygard template + "Alternatives considered").
   Smaller ones go in README "Design decisions".
+- ADRs are never modified once written, except to mark them as superseded by a newer ADR. A change of
+  decision is a new ADR.
 - Package versions: `9.0.*` for Microsoft packages until Central Package Management is introduced with CI.
 
 ## Roadmap (from the project brief)
