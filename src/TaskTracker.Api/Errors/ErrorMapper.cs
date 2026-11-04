@@ -21,6 +21,9 @@ public static class ErrorMapper
         AuthenticationFailedException => (StatusCodes.Status401Unauthorized, new ErrorResponse(
             AuthenticationFailedException.Code, exception.Message)),
 
+        NotAuthenticatedException => (StatusCodes.Status401Unauthorized, new ErrorResponse(
+            NotAuthenticatedException.Code, exception.Message)),
+
         DomainException domain => (StatusFor(domain.Kind), new ErrorResponse(domain.Code, domain.Message)),
 
         // Never expose the internal message or stack trace; it is logged instead.

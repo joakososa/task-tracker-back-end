@@ -40,7 +40,7 @@ Inspect the DB: `docker exec tasktracker-sql /opt/mssql-tools18/bin/sqlcmd -S lo
 - Domain errors: throw `DomainException(DomainErrors.X, message)`; each `DomainError` has a `Code` and an `ErrorKind`.
   Codes match `Error.code` in `docs/openapi.yaml`. Api (`ErrorMapper`) maps kind → HTTP status; Domain never knows HTTP.
   Failures that are not entity rules are Application exceptions mapped by `ErrorMapper`
-  (`AuthenticationFailedException` → 401 `INVALID_CREDENTIALS`).
+  (`AuthenticationFailedException` → 401 `INVALID_CREDENTIALS`, `NotAuthenticatedException` → 401 `UNAUTHORIZED`).
   Every error response uses `ErrorResponse` (the contract `Error` schema), including model-binding 400s.
 - Persistence: one `IEntityTypeConfiguration<T>` per entity in `Infrastructure/Persistence/Configurations`.
   Nullability comes from the entity (no `IsRequired()`); max lengths come from Domain constants.
@@ -117,11 +117,14 @@ Test suite: 94 unit + 20 integration, all green.
 **Next:** `GET/PUT /users/me`: `AddJwtBearer` with the same `JwtOptions` (default `MapInboundClaims` turns
 `sub` into `ClaimTypes.NameIdentifier` for `HttpContextCurrentUser`), and the 401 challenge written as
 `ErrorResponse`.
-After registration: `AuditableEntity` setters → private (interceptor writes via `entry.Property`), and
-split `TimestampedEntity` (CreatedAt/UpdatedAt) from `AuditableEntity` (+CreatedBy) so `User` drops
-`CreatedBy` (new migration), mirroring `TimestampedDto`/`AuditedDto` in Application.
+Then the PR for step 4.
 
-Then step 5: Projects end to end; step 6: GitHub Actions CI (build, test, coverage, SQL image as config).
+After the auth PR, on its own branch: `AuditableEntity` setters → private (interceptor writes via
+`entry.Property`), and split `TimestampedEntity` (CreatedAt/UpdatedAt) from `AuditableEntity` (+CreatedBy) so
+`User` drops `CreatedBy` (new migration), mirroring `TimestampedDto`/`AuditedDto` in Application.
+
+Then step 5: GitHub Actions CI (build, test, coverage, SQL image as config; Central Package Management),
+moved before Projects so every later PR runs it; step 6: Projects end to end (RF-04..RF-08).
 
 Open items noted for later: .NET 9 → 10 (LTS) upgrade; `/health/live` vs `/health/ready` when
 containerizing; least-privilege SQL login for the app; Identity migration as a separate exercise;

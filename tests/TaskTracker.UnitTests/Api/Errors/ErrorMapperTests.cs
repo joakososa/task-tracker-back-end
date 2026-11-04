@@ -65,6 +65,17 @@ public class ErrorMapperTests
     }
 
     [Fact]
+    public void Map_NotAuthenticatedException_Returns401WithUnauthorizedCode()
+    {
+        var (status, body) = ErrorMapper.Map(new NotAuthenticatedException());
+
+        Assert.Equal(401, status);
+        Assert.Equal("UNAUTHORIZED", body.Code);
+        Assert.Equal("Missing or invalid access token.", body.Message);
+        Assert.Null(body.Errors);
+    }
+
+    [Fact]
     public void Map_UnexpectedException_Returns500WithoutInternalMessage()
     {
         var exception = new InvalidOperationException("Connection string leaked here");

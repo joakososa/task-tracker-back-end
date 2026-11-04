@@ -17,8 +17,15 @@ public class FakeUserRepository : IUserRepository
         return Task.FromResult(this._users.SingleOrDefault(u => u.Email.Equals(email, StringComparison.Ordinal)));
     }
 
+    public Task<User?> GetByIdAsync(int id, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(this._users.SingleOrDefault(u => u.Id == id));
+    }
+
+    // Assigns ids 1, 2, 3... like the database identity column, through the private setter as EF does.
     public void Add(User user)
     {
+        typeof(User).GetProperty(nameof(User.Id))!.SetValue(user, this._users.Count + 1);
         this._users.Add(user);
     }
 }
