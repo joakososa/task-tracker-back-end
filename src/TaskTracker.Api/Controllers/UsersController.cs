@@ -4,6 +4,7 @@ using TaskTracker.Application.Common.Interfaces;
 using TaskTracker.Application.Users;
 using TaskTracker.Application.Users.GetCurrent;
 using TaskTracker.Application.Users.Register;
+using TaskTracker.Application.Users.UpdateCurrent;
 
 namespace TaskTracker.Api.Controllers;
 
@@ -29,5 +30,14 @@ public sealed class UsersController : ControllerBase
         CancellationToken cancellationToken)
     {
         return Ok(await handler.HandleAsync(new GetCurrentUserQuery(), cancellationToken));
+    }
+
+    [HttpPut("me")]
+    public async Task<ActionResult<UserDto>> UpdateCurrent(
+        UpdateCurrentUserCommand command,
+        [FromServices] ICommandHandler<UpdateCurrentUserCommand, UserDto> handler,
+        CancellationToken cancellationToken)
+    {
+        return Ok(await handler.HandleAsync(command, cancellationToken));
     }
 }
