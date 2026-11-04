@@ -17,7 +17,7 @@ public class ProjectTests
     {
         var ex = Assert.Throws<DomainException>(() => new Project(name, 1));
 
-        Assert.Equal(DomainErrors.FieldRequired, ex.Code);
+        Assert.Equal("FIELD_REQUIRED", ex.Code);
     }
 
     [Fact]
@@ -27,7 +27,7 @@ public class ProjectTests
 
         var ex = Assert.Throws<DomainException>(() => new Project(name, 1));
 
-        Assert.Equal(DomainErrors.FieldTooLong, ex.Code);
+        Assert.Equal("FIELD_TOO_LONG", ex.Code);
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class ProjectTests
 
         var ex = Assert.Throws<DomainException>(() => project.AddMember(userId));
 
-        Assert.Equal(DomainErrors.Project.InvalidMember, ex.Code);
+        Assert.Equal("PROJECT_INVALID_MEMBER", ex.Code);
         Assert.False(project.IsMember(userId));
     }
 
@@ -110,7 +110,7 @@ public class ProjectTests
 
         var ex = Assert.Throws<DomainException>(() => project.AddMember(userId));
 
-        Assert.Equal(DomainErrors.Project.InvalidMember, ex.Code);
+        Assert.Equal("PROJECT_INVALID_MEMBER", ex.Code);
         Assert.Single(project.Members);
     }
 

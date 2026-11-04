@@ -1,0 +1,22 @@
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+
+namespace TaskTracker.IntegrationTests.Fixtures;
+
+/// <summary>
+/// Runs the real Api (its Program.cs, DI and middleware) in memory, against the Testcontainers database.
+/// </summary>
+public sealed class ApiFactory(string connectionString) : WebApplicationFactory<Program>
+{
+    // Public so tests can build their own tokens (expired, for a missing user) that the Api accepts as signed.
+    public const string SigningKey = "integration-test-signing-key-at-least-32-bytes";
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        // Program reads the connection string right after CreateBuilder. UseSetting is applied by then;
+        // ConfigureAppConfiguration is not, and the tests would silently run against the local docker-compose DB.
+        builder.UseSetting("ConnectionStrings:Default", connectionString);
+        // The real key lives in user-secrets, which a CI machine does not have.
+        builder.UseSetting("Jwt:SigningKey", SigningKey);
+    }
+}

@@ -30,6 +30,6 @@ public class CommentTests
 
         var ex = Assert.Throws<DomainException>(() => new Comment(10, 3, content));
 
-        Assert.Equal(DomainErrors.FieldTooLong, ex.Code);
+        Assert.Equal("FIELD_TOO_LONG", ex.Code);
     }
 }

@@ -12,9 +12,10 @@ deployed and operated.
 - [x] Design the API contract first (OpenAPI) from written functional requirements
 - [x] Clean Architecture solution layout enforced by project references
 - [x] Domain model with unit tests (xUnit)
-- [ ] EF Core + SQL Server with migrations, Fluent API configurations and audit fields
-- [ ] JWT authentication and resource-based authorization (project membership)
-- [ ] Integration tests against a real SQL Server using Testcontainers
+- [x] EF Core + SQL Server with migrations, Fluent API configurations and audit fields
+- [x] JWT authentication (register, login, current user profile)
+- [ ] Resource-based authorization (project membership)
+- [x] Integration tests against a real SQL Server using Testcontainers
 - [ ] CI pipeline (build, test, coverage) on GitHub Actions
 - [ ] Containerized API (Docker) and CD pipeline
 - [ ] Deployment to Azure with infrastructure as code (AWS later, as a separate exercise)
@@ -61,7 +62,8 @@ The compiler enforces it: Domain cannot reference EF Core even by accident.
 Prerequisites: .NET 9 SDK, Docker.
 
 ```bash
-docker compose up -d                                   # SQL Server 2022 on localhost:1433
+docker compose up -d --wait                            # SQL Server 2022 on localhost:1433
+dotnet user-secrets set "Jwt:SigningKey" "$(openssl rand -base64 48)" --project src/TaskTracker.Api   # once
 dotnet run --project src/TaskTracker.Api --launch-profile http
 curl http://localhost:5000/health                      # → Healthy
 ```
@@ -91,8 +93,36 @@ Smaller, non-obvious choices are noted here until they deserve one.
 - **Rich domain entities.** Rules such as task state transitions and project
   membership live in the entities and are covered by unit tests; use cases
   orchestrate, they do not decide.
-- **Domain errors carry a code**, matching the `Error.code` in the OpenAPI
-  contract. The API layer maps codes to HTTP status; Domain knows nothing about HTTP.
+- **Domain errors carry a code and a kind** (`Validation`, `Conflict`, `NotFound`,
+  `Forbidden`). The code matches `Error.code` in the OpenAPI contract; the API maps
+  the kind to an HTTP status, so Domain knows nothing about HTTP (ADR 0007).
+- **Missing fields are reported by the validator, not by model binding.**
+  `SuppressImplicitRequiredAttributeForNonNullableReferenceTypes` stops ASP.NET Core
+  from treating non-nullable strings as `[Required]`, so a missing `name` comes back
+  together with every other field error (ADR 0007). Model binding only rejects
+  malformed JSON and wrong types.
+- **HTTP tests check responses against the contract.** Besides asserting the status,
+  each test validates the response against `docs/openapi.yaml` (operation, documented
+  status, body schema) with NSwag + NJsonSchema, so the contract cannot silently drift
+  from the implementation.
+- **`User` hashes its own password.** It receives the plain password and a Domain
+  `IPasswordHasher` (implemented in Infrastructure with Identity's PBKDF2 hasher), so
+  the password policy is an entity rule and no use case can skip it (ADR 0008).
+- **Secure by default.** An authorization fallback policy requires a valid token on
+  every endpoint; the public ones (register, login, `/health`) opt out explicitly
+  with `[AllowAnonymous]`. Forgetting an attribute closes an endpoint instead of
+  opening it.
+- **Every 401 uses the contract's `Error` shape.** JwtBearer answers a rejected
+  token with an empty body, so its challenge is overridden to write the same
+  `ErrorResponse` as every other error. Two codes: `INVALID_CREDENTIALS` for a failed
+  login, `UNAUTHORIZED` for a missing or invalid token.
+- **Failed logins are an Application concern.** Authenticating is a use case, not an
+  entity rule, so it throws an Application exception instead of a domain error. Unknown
+  email and wrong password give the same response; response time is not equalized,
+  since registration already reveals whether an email exists (409).
+- **Short-lived HS256 tokens, key outside the repo.** Tokens last 60 minutes with a
+  30-second clock skew (the default is 5 minutes, meant for many servers). The signing
+  key comes from user-secrets locally and is validated at startup.
 - **Enums in SQL Server, two ways on purpose.** `TaskState` is a lookup table
   seeded from the enum (FK-enforced); `TaskPriority` is a string column with a
   `CHECK` constraint. Both are valid; having both makes the trade-off visible.
