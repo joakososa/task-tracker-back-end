@@ -8,12 +8,15 @@ namespace TaskTracker.IntegrationTests.Fixtures;
 /// </summary>
 public sealed class ApiFactory(string connectionString) : WebApplicationFactory<Program>
 {
+    // Public so tests can build their own tokens (expired, for a missing user) that the Api accepts as signed.
+    public const string SigningKey = "integration-test-signing-key-at-least-32-bytes";
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         // Program reads the connection string right after CreateBuilder. UseSetting is applied by then;
         // ConfigureAppConfiguration is not, and the tests would silently run against the local docker-compose DB.
         builder.UseSetting("ConnectionStrings:Default", connectionString);
         // The real key lives in user-secrets, which a CI machine does not have.
-        builder.UseSetting("Jwt:SigningKey", "integration-test-signing-key-at-least-32-bytes");
+        builder.UseSetting("Jwt:SigningKey", SigningKey);
     }
 }

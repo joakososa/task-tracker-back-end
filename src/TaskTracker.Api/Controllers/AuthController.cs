@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskTracker.Application.Auth;
 using TaskTracker.Application.Auth.Login;
@@ -7,6 +8,7 @@ namespace TaskTracker.Api.Controllers;
 
 [ApiController]
 [Route("auth")]
+[AllowAnonymous]
 public sealed class AuthController : ControllerBase
 {
     [HttpPost("login")]
