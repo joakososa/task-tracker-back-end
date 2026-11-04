@@ -13,7 +13,8 @@ deployed and operated.
 - [x] Clean Architecture solution layout enforced by project references
 - [x] Domain model with unit tests (xUnit)
 - [x] EF Core + SQL Server with migrations, Fluent API configurations and audit fields
-- [ ] JWT authentication and resource-based authorization (project membership)
+- [x] JWT authentication (register, login, current user profile)
+- [ ] Resource-based authorization (project membership)
 - [x] Integration tests against a real SQL Server using Testcontainers
 - [ ] CI pipeline (build, test, coverage) on GitHub Actions
 - [ ] Containerized API (Docker) and CD pipeline
@@ -107,6 +108,21 @@ Smaller, non-obvious choices are noted here until they deserve one.
 - **`User` hashes its own password.** It receives the plain password and a Domain
   `IPasswordHasher` (implemented in Infrastructure with Identity's PBKDF2 hasher), so
   the password policy is an entity rule and no use case can skip it (ADR 0008).
+- **Secure by default.** An authorization fallback policy requires a valid token on
+  every endpoint; the public ones (register, login, `/health`) opt out explicitly
+  with `[AllowAnonymous]`. Forgetting an attribute closes an endpoint instead of
+  opening it.
+- **Every 401 uses the contract's `Error` shape.** JwtBearer answers a rejected
+  token with an empty body, so its challenge is overridden to write the same
+  `ErrorResponse` as every other error. Two codes: `INVALID_CREDENTIALS` for a failed
+  login, `UNAUTHORIZED` for a missing or invalid token.
+- **Failed logins are an Application concern.** Authenticating is a use case, not an
+  entity rule, so it throws an Application exception instead of a domain error. Unknown
+  email and wrong password give the same response; response time is not equalized,
+  since registration already reveals whether an email exists (409).
+- **Short-lived HS256 tokens, key outside the repo.** Tokens last 60 minutes with a
+  30-second clock skew (the default is 5 minutes, meant for many servers). The signing
+  key comes from user-secrets locally and is validated at startup.
 - **Enums in SQL Server, two ways on purpose.** `TaskState` is a lookup table
   seeded from the enum (FK-enforced); `TaskPriority` is a string column with a
   `CHECK` constraint. Both are valid; having both makes the trade-off visible.

@@ -89,9 +89,9 @@ Step 3 (Domain + EF Core) **complete**:
 - 3.3 Testcontainers fixture (`SqlServerFixture`, now `IntegrationFixture`; one container per run) + schema tests ✅
 - 3.4 `AuditInterceptor` (CreatedAt/UpdatedAt/CreatedBy via `ICurrentUser` + `TimeProvider`) ✅
 
-Test suite: 94 unit + 20 integration, all green.
+Test suite: 104 unit + 32 integration, all green.
 
-**Step 4 (authentication) in progress** on branch `register-user`:
+**Step 4 (authentication) complete** on branch `register-user` (RF-01..RF-03), PR pending:
 - 4.1 Registration use case ✅ — `RegisterUserHandler` (`ICommandHandler<,>`), `RegisterUserCommandValidator`,
   `ValidationDecorator` wired with Scrutor (`Scan` + `Decorate`), `UserDto : TimestampedDto`.
   `User` hashes its own password via Domain `IPasswordHasher` (policy 8–128, no trim).
@@ -112,12 +112,16 @@ Test suite: 94 unit + 20 integration, all green.
   password; timing not equalized on purpose, `POST /users` already reveals emails with a 409),
   `User.VerifyPassword` (ADR 0008), `JwtTokenService` (HS256, `sub` = user id, expiry from `TimeProvider`),
   `JwtOptions` validated on start; `SigningKey` in user-secrets, test key set in `ApiFactory`.
-  The Api only issues tokens so far: nothing validates them yet.
+- 4.7 Token validation + `GET /users/me` ✅ — `AddJwtAuthentication()` (Api/Auth): JwtBearer with the same
+  `JwtOptions`, HS256 only, 30 s clock skew; default `MapInboundClaims` turns `sub` into
+  `ClaimTypes.NameIdentifier` for `HttpContextCurrentUser`. `OnChallenge` writes the 401 as `ErrorResponse`
+  (`UNAUTHORIZED`). Fallback policy: every endpoint needs a token unless `[AllowAnonymous]` (register, login,
+  `/health`, `/openapi`). `IQueryHandler<,>` for reads (no validation decorator). A valid token for a user that
+  no longer exists → `NotAuthenticatedException` (401). Test helpers: `ApiTestBase.AuthenticateAsync()`
+  (register + login + bearer header), `ApiFactory.SigningKey` to build expired or foreign tokens.
+- 4.8 `PUT /users/me` ✅ — `UpdateCurrentUserHandler`: replaces name and avatar (missing avatar removes it).
 
-**Next:** `GET/PUT /users/me`: `AddJwtBearer` with the same `JwtOptions` (default `MapInboundClaims` turns
-`sub` into `ClaimTypes.NameIdentifier` for `HttpContextCurrentUser`), and the 401 challenge written as
-`ErrorResponse`.
-Then the PR for step 4.
+**Next:** the PR for step 4.
 
 After the auth PR, on its own branch: `AuditableEntity` setters → private (interceptor writes via
 `entry.Property`), and split `TimestampedEntity` (CreatedAt/UpdatedAt) from `AuditableEntity` (+CreatedBy) so
