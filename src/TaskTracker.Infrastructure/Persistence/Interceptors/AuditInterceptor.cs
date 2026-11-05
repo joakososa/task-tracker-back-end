@@ -27,18 +27,19 @@ public sealed class AuditInterceptor(ICurrentUser currentUser, TimeProvider cloc
 
         var now = clock.GetUtcNow();
 
+        // The setters are private, so the values are written through EF, which also updates the entity instance.
         foreach (var entry in context.ChangeTracker.Entries<AuditableEntity>())
         {
             switch (entry.State)
             {
                 case EntityState.Added:
-                    entry.Entity.CreatedAt = now;
-                    entry.Entity.UpdatedAt = now;
-                    entry.Entity.CreatedBy = currentUser.UserId;
+                    entry.Property(e => e.CreatedAt).CurrentValue = now;
+                    entry.Property(e => e.UpdatedAt).CurrentValue = now;
+                    entry.Property(e => e.CreatedBy).CurrentValue = currentUser.UserId;
                     break;
 
                 case EntityState.Modified:
-                    entry.Entity.UpdatedAt = now;
+                    entry.Property(e => e.UpdatedAt).CurrentValue = now;
                     entry.Property(e => e.CreatedAt).IsModified = false;
                     entry.Property(e => e.CreatedBy).IsModified = false;
                     break;

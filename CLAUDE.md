@@ -121,13 +121,14 @@ Test suite: 104 unit + 32 integration, all green.
   (register + login + bearer header), `ApiFactory.SigningKey` to build expired or foreign tokens.
 - 4.8 `PUT /users/me` ✅ — `UpdateCurrentUserHandler`: replaces name and avatar (missing avatar removes it).
 
-**Next:** the PR for step 4.
+Step 4 merged (PR #11).
 
-After the auth PR, on its own branch: `AuditableEntity` setters → private (interceptor writes via
-`entry.Property`), and split `TimestampedEntity` (CreatedAt/UpdatedAt) from `AuditableEntity` (+CreatedBy) so
-`User` drops `CreatedBy` (new migration), mirroring `TimestampedDto`/`AuditedDto` in Application.
+Audit cleanup (branch `audit-fields-cleanup`): `AuditableEntity` setters are private; `AuditInterceptor`
+writes them through `entry.Property(...).CurrentValue`. No model change, no migration.
+Splitting a `TimestampedEntity` out so `User` drops `CreatedBy` was considered and dropped: one extra base
+class to remove a column that is always null, while the contract keeps `createdBy` optional anyway.
 
-Then step 5: GitHub Actions CI (build, test, coverage, SQL image as config; Central Package Management),
+**Next:** step 5: GitHub Actions CI (build, test, coverage, SQL image as config; Central Package Management),
 moved before Projects so every later PR runs it; step 6: Projects end to end (RF-04..RF-08).
 
 Open items noted for later: .NET 9 → 10 (LTS) upgrade; `/health/live` vs `/health/ready` when
