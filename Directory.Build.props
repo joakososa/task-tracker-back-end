@@ -1,0 +1,14 @@
+<Project>
+  <!-- Shared by every project in the solution. -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Report known vulnerabilities in direct and transitive packages during restore. -->
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <!-- CI turns warnings into errors. A vulnerability reported in a package we already use must not block
+         unrelated work: it stays a warning, and Dependabot alerts track it. -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+  </PropertyGroup>
+</Project>

@@ -62,7 +62,8 @@ Inspect the DB: `docker exec tasktracker-sql /opt/mssql-tools18/bin/sqlcmd -S lo
   Smaller ones go in README "Design decisions".
 - ADRs are never modified once written, except to mark them as superseded by a newer ADR. A change of
   decision is a new ADR.
-- Package versions: `9.0.*` for Microsoft packages until Central Package Management is introduced with CI.
+- Package versions: exact, in `Directory.Packages.props` (Central Package Management); csproj files have no versions.
+  Shared project properties live in `Directory.Build.props`; the SDK is pinned in `global.json`.
 
 ## Roadmap (from the project brief)
 
