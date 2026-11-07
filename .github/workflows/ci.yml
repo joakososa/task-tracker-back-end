@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# A new push to the same branch cancels the run that is still going.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: Directory.Packages.props
+
+      - name: Restore
+        run: dotnet restore
+
+      # Warnings are errors only here, not locally. TreatWarningsAsErrors (not -warnaserror) so the
+      # NuGet audit warnings excluded in Directory.Build.props never block a PR.
+      - name: Build (warnings fail the build)
+        id: build
+        run: dotnet build --no-restore -c Release -p:TreatWarningsAsErrors=true
+
+      - name: Explain build failure
+        if: failure() && steps.build.outcome == 'failure'
+        run: |
+          echo "::error::The build failed because of compiler warnings (they are errors in CI). Fix the warnings listed above."
+          {
+            echo "### Build failed: warnings are errors in CI"
+            echo "Fix the warnings listed in the build log. To reproduce locally:"
+            echo '`dotnet build -c Release -p:TreatWarningsAsErrors=true`'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Unit tests
+        run: dotnet test tests/TaskTracker.UnitTests --no-build -c Release --collect "XPlat Code Coverage" --results-directory coverage
+
+      # Testcontainers starts SQL Server through the runner's Docker.
+      - name: Integration tests
+        run: dotnet test tests/TaskTracker.IntegrationTests --no-build -c Release --collect "XPlat Code Coverage" --results-directory coverage
+
+      # Coverage is reported, not enforced: no threshold.
+      - name: Coverage report
+        uses: danielpalme/ReportGenerator-GitHub-Action@v5
+        with:
+          reports: coverage/**/coverage.cobertura.xml
+          targetdir: coverage-report
+          reporttypes: Html;MarkdownSummaryGithub
+          filefilters: -**/Migrations/**
+
+      - name: Coverage summary
+        run: cat coverage-report/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: coverage-report
