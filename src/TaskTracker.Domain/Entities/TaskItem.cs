@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using TaskTracker.Domain.Common;
 using TaskTracker.Domain.Enums;
 
@@ -19,7 +20,9 @@ public class TaskItem : AuditableEntity
     public Project Project { get; private set; } = null!;
     public User? Assignee { get; private set; }
 
+#pragma warning disable CS8618 // EF Core materializes entities through this constructor and sets every property.
     private TaskItem() { }
+#pragma warning restore CS8618
 
     public TaskItem(int projectId, string title, string description, TaskPriority priority = TaskPriority.Medium)
     {
@@ -54,6 +57,7 @@ public class TaskItem : AuditableEntity
         AssigneeId = userId;
     }
 
+    [MemberNotNull(nameof(Title), nameof(Description))]
     private void SetDetails(string title, string description, TaskPriority priority)
     {
         Title = Guard.RequiredText(title, TitleMaxLength, nameof(Title));
