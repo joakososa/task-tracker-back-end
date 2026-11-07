@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using TaskTracker.Application.Common.Interfaces;
 using TaskTracker.Infrastructure.Persistence;
@@ -62,6 +63,7 @@ public sealed class IntegrationFixture : IAsyncLifetime
 }
 
 [CollectionDefinition(Name)]
+[SuppressMessage("Naming", "CA1711", Justification = "xUnit convention for collection definitions.")]
 public sealed class IntegrationCollection : ICollectionFixture<IntegrationFixture>
 {
     public const string Name = "Integration";

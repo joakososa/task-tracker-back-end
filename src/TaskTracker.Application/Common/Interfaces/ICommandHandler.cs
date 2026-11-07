@@ -2,5 +2,5 @@ namespace TaskTracker.Application.Common.Interfaces;
 
 public interface ICommandHandler<TCommand, TResult>
 {
-    Task<TResult> HandleAsync(TCommand command, CancellationToken ct);
+    Task<TResult> HandleAsync(TCommand command, CancellationToken cancellationToken);
 }

@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 using TaskTracker.Domain.Common;
 using TaskTracker.Domain.Enums;
@@ -34,13 +35,13 @@ public class TaskItem : AuditableEntity
     public void Update(string title, string description, TaskPriority priority) =>
         SetDetails(title, description, priority);
 
-    private static readonly IReadOnlyDictionary<TaskState, TaskState[]> AllowedTransitions =
+    private static readonly FrozenDictionary<TaskState, TaskState[]> AllowedTransitions =
         new Dictionary<TaskState, TaskState[]>
         {
             [TaskState.Todo] = [TaskState.InProgress, TaskState.Done],
             [TaskState.InProgress] = [TaskState.Done],
             [TaskState.Done] = [],
-        };
+        }.ToFrozenDictionary();
 
     public void ChangeState(TaskState newState)
     {

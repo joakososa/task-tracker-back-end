@@ -5,6 +5,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
+    <!-- Microsoft's recommended analyzer rules. Exceptions, with their reason, are in .editorconfig. -->
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+
     <!-- Report known vulnerabilities in direct and transitive packages during restore. -->
     <NuGetAuditMode>all</NuGetAuditMode>
     <!-- CI turns warnings into errors. A vulnerability reported in a package we already use must not block

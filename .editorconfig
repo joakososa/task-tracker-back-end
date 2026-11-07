@@ -1,0 +1,16 @@
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml,props,csproj}]
+indent_size = 2
+
+# Test names follow Method_Scenario_ExpectedResult, so underscores are intended.
+[tests/**/*.cs]
+dotnet_diagnostic.CA1707.severity = none
+
+# EF Core generates migrations; they are never edited by hand.
+[src/**/Migrations/*.cs]
+generated_code = true

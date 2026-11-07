@@ -26,6 +26,20 @@ jobs:
       - name: Restore
         run: dotnet restore
 
+      # Same rules as the IDE (.editorconfig). Locally, `dotnet format` fixes it.
+      - name: Check formatting
+        id: format
+        run: dotnet format --verify-no-changes --no-restore
+
+      - name: Explain formatting failure
+        if: failure() && steps.format.outcome == 'failure'
+        run: |
+          echo "::error::The code is not formatted as .editorconfig says. Run 'dotnet format' locally and commit the result."
+          {
+            echo "### Formatting check failed"
+            echo 'Run `dotnet format` locally and commit the result.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       # Warnings are errors only here, not locally. TreatWarningsAsErrors (not -warnaserror) so the
       # NuGet audit warnings excluded in Directory.Build.props never block a PR.
       - name: Build (warnings fail the build)
