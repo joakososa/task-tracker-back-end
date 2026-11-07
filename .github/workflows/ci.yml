@@ -11,15 +11,17 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-# The job token can only read the repo: if an action were compromised, it could not push or change anything.
+# Job tokens can only read the repo, so a compromised action could not push or change anything.
+# The one exception is dependency-submission, which says so below.
 permissions:
   contents: read
+
+# Actions are pinned to a commit SHA, not a tag: a tag can be moved to other code, a SHA cannot.
+# The comment after each SHA is the version it points to.
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    # Actions are pinned to a commit SHA, not a tag: a tag can be moved to other code, a SHA cannot.
-    # The comment after each SHA is the version it points to.
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -85,3 +87,41 @@ jobs:
         with:
           name: coverage-report
           path: coverage-report
+
+  # GitHub cannot read versions from Directory.Packages.props, so this job sends it the packages the
+  # restore actually resolved (direct and transitive). It runs on main too: that is the baseline a PR
+  # is compared against.
+  dependency-submission:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # the dependency submission API requires it; only this job gets it
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: Directory.Packages.props
+
+      - name: Restore
+        run: dotnet restore
+
+      # On a PR, the snapshot belongs to the branch's last commit, which is what dependency-review compares.
+      - name: Submit resolved packages
+        uses: advanced-security/component-detection-dependency-submission-action@a02aeda7a175ad4dd38a13c4d3ff2df9da8f2cf0 # v0.2.0
+        with:
+          detectorsCategories: NuGet
+          snapshot-sha: ${{ github.event.pull_request.head.sha || github.sha }}
+          snapshot-ref: ${{ github.event_name == 'pull_request' && format('refs/heads/{0}', github.head_ref) || github.ref }}
+
+  # Fails a PR that adds or upgrades to a package with a known vulnerability. A vulnerability found
+  # later in a package main already uses does not block PRs: Dependabot alerts track those.
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    needs: dependency-submission
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          retry-on-snapshot-warnings: true # the submitted snapshot can take a few seconds to be processed
