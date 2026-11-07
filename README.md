@@ -1,5 +1,7 @@
 # Task Tracker — Backend
 
+[![CI](https://github.com/joakososa/task-tracker-back-end/actions/workflows/ci.yml/badge.svg)](https://github.com/joakososa/task-tracker-back-end/actions/workflows/ci.yml)
+
 A Trello-like task management API built from scratch in .NET, used as a hands-on
 project to practice **backend architecture, testing, CI/CD and Azure deployment**.
 
@@ -16,7 +18,7 @@ deployed and operated.
 - [x] JWT authentication (register, login, current user profile)
 - [ ] Resource-based authorization (project membership)
 - [x] Integration tests against a real SQL Server using Testcontainers
-- [ ] CI pipeline (build, test, coverage) on GitHub Actions
+- [x] CI pipeline on GitHub Actions (build, format, tests, coverage, dependency review)
 - [ ] Containerized API (Docker) and CD pipeline
 - [ ] Deployment to Azure with infrastructure as code (AWS later, as a separate exercise)
 - [ ] Caching layer for project membership and project reads
@@ -54,7 +56,7 @@ The compiler enforces it: Domain cannot reference EF Core even by accident.
 | Auth | JWT bearer tokens, ASP.NET Core `PasswordHasher` |
 | Testing | xUnit, Testcontainers |
 | Local infra | Docker Compose |
-| CI/CD | GitHub Actions *(planned)* |
+| CI/CD | GitHub Actions (CI; CD *planned*) |
 | Cloud | Azure *(planned)* |
 
 ## Running locally
@@ -78,6 +80,23 @@ dotnet test tests/TaskTracker.UnitTests                # unit only, no Docker ne
 ```
 
 Integration tests start an ephemeral SQL Server container per run via Testcontainers.
+
+## Continuous integration
+
+Every pull request to `main` (and every push to it) runs [`ci.yml`](.github/workflows/ci.yml):
+
+1. **Format:** `dotnet format --verify-no-changes`, with the rules in `.editorconfig`.
+2. **Build** in Release with warnings as errors (including Microsoft's recommended analyzers).
+3. **Unit and integration tests**, the latter against SQL Server in the runner's Docker.
+4. **Coverage report** in the run summary, full HTML as an artifact.
+5. **Dependency review:** the PR fails if it adds a package with a known vulnerability.
+
+To reproduce a failing build or format check locally:
+
+```bash
+dotnet format                                          # fixes formatting
+dotnet build -c Release -p:TreatWarningsAsErrors=true  # same build as CI
+```
 
 ## Design decisions
 
@@ -129,6 +148,25 @@ Smaller, non-obvious choices are noted here until they deserve one.
 - **`DateTimeOffset` everywhere.** Removes the `DateTime.Kind` ambiguity at the
   cost of two bytes per column.
 - **Physical deletes with cascades.** Soft delete is out of scope for the MVP.
+- **Exact versions, each in one place.** The SDK is pinned in `global.json`, every
+  package version lives in `Directory.Packages.props` (Central Package Management),
+  and the SQL Server image uses an exact tag. An upgrade is a reviewed change, never
+  a surprise in a build.
+- **Warnings fail the build only in CI.** Locally they show up but never block you
+  while working; nothing with warnings reaches `main`. The CI failure says so
+  explicitly. NuGet audit warnings are the exception, see the next point.
+- **New dependencies are reviewed; existing ones are alerted.** A PR that adds a
+  vulnerable package fails (dependency review). A vulnerability published later for a
+  package `main` already uses does not block unrelated PRs: it raises a Dependabot alert
+  instead. GitHub cannot read versions from `Directory.Packages.props`, so CI submits
+  the packages the restore actually resolved (direct and transitive) with Microsoft's
+  component detection.
+- **CI actions are pinned and the token is read-only.** Actions are referenced by
+  commit SHA, since a tag can be moved to other code; Dependabot keeps the SHAs up to
+  date. Jobs only get read access to the repository, except the one that submits
+  dependencies.
+- **Coverage is reported, not enforced.** A threshold rewards tests written for the
+  number; the report is there to spot untested areas.
 
 ## Documentation
 

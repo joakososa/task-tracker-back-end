@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# A new push to the same branch cancels the run that is still going.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Job tokens can only read the repo, so a compromised action could not push or change anything.
+# The one exception is dependency-submission, which says so below.
+permissions:
+  contents: read
+
+# Actions are pinned to a commit SHA, not a tag: a tag can be moved to other code, a SHA cannot.
+# The comment after each SHA is the version it points to.
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: Directory.Packages.props
+
+      - name: Restore
+        run: dotnet restore
+
+      # Same rules as the IDE (.editorconfig). Locally, `dotnet format` fixes it.
+      - name: Check formatting
+        id: format
+        run: dotnet format --verify-no-changes --no-restore
+
+      - name: Explain formatting failure
+        if: failure() && steps.format.outcome == 'failure'
+        run: |
+          echo "::error::The code is not formatted as .editorconfig says. Run 'dotnet format' locally and commit the result."
+          {
+            echo "### Formatting check failed"
+            echo 'Run `dotnet format` locally and commit the result.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Warnings are errors only here, not locally. TreatWarningsAsErrors (not -warnaserror) so the
+      # NuGet audit warnings excluded in Directory.Build.props never block a PR.
+      - name: Build (warnings fail the build)
+        id: build
+        run: dotnet build --no-restore -c Release -p:TreatWarningsAsErrors=true
+
+      - name: Explain build failure
+        if: failure() && steps.build.outcome == 'failure'
+        run: |
+          echo "::error::The build failed because of compiler warnings (they are errors in CI). Fix the warnings listed above."
+          {
+            echo "### Build failed: warnings are errors in CI"
+            echo "Fix the warnings listed in the build log. To reproduce locally:"
+            echo '`dotnet build -c Release -p:TreatWarningsAsErrors=true`'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Unit tests
+        run: dotnet test tests/TaskTracker.UnitTests --no-build -c Release --collect "XPlat Code Coverage" --results-directory coverage
+
+      # Testcontainers starts SQL Server through the runner's Docker.
+      - name: Integration tests
+        run: dotnet test tests/TaskTracker.IntegrationTests --no-build -c Release --collect "XPlat Code Coverage" --results-directory coverage
+
+      # Coverage is reported, not enforced: no threshold.
+      - name: Coverage report
+        uses: danielpalme/ReportGenerator-GitHub-Action@861674232075b2c6bd1405a04c4bb9b150653e81 # v5.5.12
+        with:
+          reports: coverage/**/coverage.cobertura.xml
+          targetdir: coverage-report
+          reporttypes: Html;MarkdownSummaryGithub
+          filefilters: -**/Migrations/**
+
+      - name: Coverage summary
+        run: cat coverage-report/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-report
+          path: coverage-report
+
+  # GitHub cannot read versions from Directory.Packages.props, so this job sends it the packages the
+  # restore actually resolved (direct and transitive). It runs on main too: that is the baseline a PR
+  # is compared against.
+  dependency-submission:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # the dependency submission API requires it; only this job gets it
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: Directory.Packages.props
+
+      - name: Restore
+        run: dotnet restore
+
+      # On a PR, the snapshot belongs to the branch's last commit, which is what dependency-review compares.
+      - name: Submit resolved packages
+        uses: advanced-security/component-detection-dependency-submission-action@a02aeda7a175ad4dd38a13c4d3ff2df9da8f2cf0 # v0.2.0
+        with:
+          detectorsCategories: NuGet
+          snapshot-sha: ${{ github.event.pull_request.head.sha || github.sha }}
+          snapshot-ref: ${{ github.event_name == 'pull_request' && format('refs/heads/{0}', github.head_ref) || github.ref }}
+
+  # Fails a PR that adds or upgrades to a package with a known vulnerability. A vulnerability found
+  # later in a package main already uses does not block PRs: Dependabot alerts track those.
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    needs: dependency-submission
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          retry-on-snapshot-warnings: true # the submitted snapshot can take a few seconds to be processed

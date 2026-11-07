@@ -18,7 +18,9 @@ public class User : AuditableEntity
     public string PasswordHash { get; private set; }
     public string? AvatarUrl { get; private set; }
 
+#pragma warning disable CS8618 // EF Core materializes entities through this constructor and sets every property.
     private User() { }
+#pragma warning restore CS8618
 
     public User(string name, string email, string password, IPasswordHasher hasher, string? avatarUrl = null)
     {

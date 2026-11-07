@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using TaskTracker.Domain.Common;
 
 namespace TaskTracker.Domain.Entities;
@@ -15,7 +16,9 @@ public class Project : AuditableEntity
     public User Owner { get; private set; } = null!;
     public IReadOnlyCollection<ProjectMember> Members => _members.AsReadOnly();
 
+#pragma warning disable CS8618 // EF Core materializes entities through this constructor and sets every property.
     private Project() { }
+#pragma warning restore CS8618
 
     public Project(string name, int ownerId)
     {
@@ -39,6 +42,7 @@ public class Project : AuditableEntity
         _members.Add(new ProjectMember(Id, userId));
     }
 
+    [MemberNotNull(nameof(Name))]
     private void SetName(string name) =>
         Name = Guard.RequiredText(name, NameMaxLength, nameof(Name));
 }

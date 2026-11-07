@@ -31,7 +31,7 @@ public class AuthorizationTests(IntegrationFixture fixture) : ApiTestBase(fixtur
         return new JwtTokenService(options, new FakeTimeProvider(issuedAt)).CreateAccessToken(user).AccessToken;
     }
 
-    private async Task AssertUnauthorizedAsync(HttpResponseMessage response)
+    private static async Task AssertUnauthorizedAsync(HttpResponseMessage response)
     {
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         await OpenApiContract.AssertResponseMatchesAsync(response);

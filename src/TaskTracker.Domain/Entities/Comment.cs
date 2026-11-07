@@ -13,7 +13,9 @@ public class Comment : AuditableEntity
 
     public User Author { get; private set; } = null!;
 
+#pragma warning disable CS8618 // EF Core materializes entities through this constructor and sets every property.
     private Comment() { }
+#pragma warning restore CS8618
 
     public Comment(int taskItemId, int authorId, string content)
     {

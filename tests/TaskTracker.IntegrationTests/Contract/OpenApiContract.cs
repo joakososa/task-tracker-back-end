@@ -1,3 +1,4 @@
+using System.Globalization;
 using NJsonSchema;
 using NJsonSchema.Validation;
 using NSwag;
@@ -26,7 +27,7 @@ public static class OpenApiContract
             ?? throw new InvalidOperationException("The response has no request to match against the contract.");
         var method = request.Method.Method.ToLowerInvariant();
         var path = request.RequestUri!.AbsolutePath;
-        var status = ((int)response.StatusCode).ToString();
+        var status = ((int)response.StatusCode).ToString(CultureInfo.InvariantCulture);
         var endpoint = $"{request.Method.Method} {path}";
 
         var operation = FindOperation(await Document.Value, method, path);

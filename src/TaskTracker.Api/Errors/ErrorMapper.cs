@@ -58,7 +58,7 @@ public static class ErrorMapper
     // "Email" (FluentValidation) and "$.email" (System.Text.Json) both become "email", as in the JSON body.
     private static string ToFieldName(string key)
     {
-        var name = key.StartsWith("$.") ? key[2..] : key;
+        var name = key.StartsWith("$.", StringComparison.Ordinal) ? key[2..] : key;
         return name.Length == 0 ? "body" : JsonNamingPolicy.CamelCase.ConvertName(name);
     }
 }

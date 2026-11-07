@@ -14,6 +14,8 @@ dotnet user-secrets set "Jwt:SigningKey" "$(openssl rand -base64 48)" --project 
 dotnet build
 dotnet test tests/TaskTracker.UnitTests                    # fast, no Docker
 dotnet test                                                # includes integration tests (Docker required)
+dotnet format                                              # CI fails if this would change anything
+dotnet build -c Release -p:TreatWarningsAsErrors=true      # the CI build (warnings are errors only in CI)
 dotnet run --project src/TaskTracker.Api --launch-profile http   # http://localhost:5000, /health
 dotnet ef migrations add <Name> --project src/TaskTracker.Infrastructure --startup-project src/TaskTracker.Api --output-dir Persistence/Migrations
 dotnet ef database update --project src/TaskTracker.Infrastructure --startup-project src/TaskTracker.Api
@@ -62,7 +64,12 @@ Inspect the DB: `docker exec tasktracker-sql /opt/mssql-tools18/bin/sqlcmd -S lo
   Smaller ones go in README "Design decisions".
 - ADRs are never modified once written, except to mark them as superseded by a newer ADR. A change of
   decision is a new ADR.
-- Package versions: `9.0.*` for Microsoft packages until Central Package Management is introduced with CI.
+- Package versions: exact, in `Directory.Packages.props` (Central Package Management); csproj files have no versions.
+  Shared project properties live in `Directory.Build.props`; the SDK is pinned in `global.json`.
+- Analyzers: `latest-recommended`; exceptions go in `.editorconfig` with their reason, or as a scoped
+  `[SuppressMessage]` with a justification. Never `TreatWarningsAsErrors` locally.
+- CI (`.github/workflows/ci.yml`): actions pinned by full commit SHA with the version in a comment;
+  `permissions: contents: read` unless a job needs more, scoped to that job.
 
 ## Roadmap (from the project brief)
 
@@ -128,8 +135,20 @@ writes them through `entry.Property(...).CurrentValue`. No model change, no migr
 Splitting a `TimestampedEntity` out so `User` drops `CreatedBy` was considered and dropped: one extra base
 class to remove a column that is always null, while the contract keeps `createdBy` optional anyway.
 
-**Next:** step 5: GitHub Actions CI (build, test, coverage, SQL image as config; Central Package Management),
-moved before Projects so every later PR runs it; step 6: Projects end to end (RF-04..RF-08).
+**Step 5 (CI) complete** on branch `ci-pipeline`, PR pending:
+- 5.1–5.2 `global.json` (SDK 9.0.301), Central Package Management, `Directory.Build.props` (NuGet audit of
+  transitive packages; NU1901–NU1904 never errors). CS8618 fixed (`[MemberNotNull]`, pragma on EF constructors).
+- 5.3 `ci.yml`: one build-and-test job (format, Release build with warnings as errors and a clear failure
+  message, unit + integration tests, coverage report without threshold). SQL image pinned to
+  `2022-CU27-ubuntu-22.04` in `IntegrationFixture` and compose.
+- 5.4 Analyzers `latest-recommended` + `.editorconfig`; findings fixed (source-generated error log,
+  `FrozenDictionary` transitions, handlers' parameter is `cancellationToken`).
+- 5.5 Supply chain: actions pinned by SHA, read-only token, Dependabot for actions (weekly, grouped).
+  `dependency-submission` (component detection, the only job with `contents: write`: GitHub cannot read
+  versions from `Directory.Packages.props`) + `dependency-review` on PRs.
+- 5.6 README (badge, CI section, design decisions). Repo settings are done by hand in GitHub.
+
+**Next:** step 6: Projects end to end (RF-04..RF-08). Later: Dependabot for NuGet, Trivy once there is an image.
 
 Open items noted for later: .NET 9 → 10 (LTS) upgrade; `/health/live` vs `/health/ready` when
 containerizing; least-privilege SQL login for the app; Identity migration as a separate exercise;

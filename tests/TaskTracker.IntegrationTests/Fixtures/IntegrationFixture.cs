@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using TaskTracker.Application.Common.Interfaces;
 using TaskTracker.Infrastructure.Persistence;
@@ -14,8 +15,10 @@ namespace TaskTracker.IntegrationTests.Fixtures;
 /// </summary>
 public sealed class IntegrationFixture : IAsyncLifetime
 {
-    private readonly MsSqlContainer _container =
-        new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest").Build();
+    // Exact tag, same as docker-compose.yml: an image update is a reviewed change, never a surprise in CI.
+    private const string SqlServerImage = "mcr.microsoft.com/mssql/server:2022-CU27-ubuntu-22.04";
+
+    private readonly MsSqlContainer _container = new MsSqlBuilder(SqlServerImage).Build();
 
     private DatabaseReset _reset = null!;
 
@@ -60,6 +63,7 @@ public sealed class IntegrationFixture : IAsyncLifetime
 }
 
 [CollectionDefinition(Name)]
+[SuppressMessage("Naming", "CA1711", Justification = "xUnit convention for collection definitions.")]
 public sealed class IntegrationCollection : ICollectionFixture<IntegrationFixture>
 {
     public const string Name = "Integration";

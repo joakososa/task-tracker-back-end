@@ -4,7 +4,7 @@ using TaskTracker.Domain.Common;
 using TaskTracker.Domain.Entities;
 namespace TaskTracker.Application.Users.Register;
 
-public class RegisterUserHandler : ICommandHandler<RegisterUserCommand,UserDto>
+public class RegisterUserHandler : ICommandHandler<RegisterUserCommand, UserDto>
 {
     private readonly IUserRepository _users;
     private readonly IPasswordHasher _hasher;
@@ -17,7 +17,7 @@ public class RegisterUserHandler : ICommandHandler<RegisterUserCommand,UserDto>
         _uow = uow;
     }
 
-    public async Task<UserDto> HandleAsync(RegisterUserCommand command, CancellationToken cancellationToken) 
+    public async Task<UserDto> HandleAsync(RegisterUserCommand command, CancellationToken cancellationToken)
     {
         if (await _users.ExistsByEmailAsync(User.NormalizeEmail(command.Email), cancellationToken))
         {

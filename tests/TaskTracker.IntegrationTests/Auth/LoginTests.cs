@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -31,7 +32,7 @@ public class LoginTests(IntegrationFixture fixture) : ApiTestBase(fixture)
         var token = await response.Content.ReadFromJsonAsync<AccessTokenDto>();
         Assert.Equal("Bearer", token?.TokenType);
         Assert.Equal(3600, token?.ExpiresIn);
-        Assert.Equal(user.Id.ToString(), new JsonWebToken(token!.AccessToken).Subject);
+        Assert.Equal(user.Id.ToString(CultureInfo.InvariantCulture), new JsonWebToken(token!.AccessToken).Subject);
     }
 
     [Fact]
