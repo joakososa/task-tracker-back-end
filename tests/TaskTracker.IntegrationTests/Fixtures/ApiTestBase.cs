@@ -1,6 +1,8 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Microsoft.EntityFrameworkCore;
 using TaskTracker.Application.Auth;
+using TaskTracker.Application.Projects;
 using TaskTracker.Application.Users;
 
 namespace TaskTracker.IntegrationTests.Fixtures;
@@ -13,7 +15,7 @@ public abstract class ApiTestBase(IntegrationFixture fixture) : IAsyncLifetime
 {
     protected HttpClient Client { get; } = fixture.Api.CreateClient();
 
-    /// For assertions the Api cannot answer yet (no GET for the resource), straight against the database.
+    /// For test data the Api cannot create yet, straight in the database.
     protected IntegrationFixture Fixture { get; } = fixture;
 
     public Task InitializeAsync() => Fixture.ResetDatabaseAsync();
@@ -36,5 +38,21 @@ public abstract class ApiTestBase(IntegrationFixture fixture) : IAsyncLifetime
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
 
         return user;
+    }
+
+    /// Creates a project through the Api as the currently authenticated user.
+    protected async Task<ProjectDto> CreateProjectAsync(string name = "Tablero")
+    {
+        var response = await Client.PostAsJsonAsync("/projects", new { name });
+        return (await response.Content.ReadFromJsonAsync<ProjectDto>())!;
+    }
+
+    /// Straight in the database until POST /projects/{id}/members exists.
+    protected async Task AddMemberInDatabaseAsync(int projectId, int userId)
+    {
+        await using var db = Fixture.CreateDbContext();
+        var project = await db.Projects.Include(p => p.Members).SingleAsync(p => p.Id == projectId);
+        project.AddMember(userId);
+        await db.SaveChangesAsync();
     }
 }

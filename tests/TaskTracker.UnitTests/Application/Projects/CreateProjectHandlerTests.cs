@@ -10,11 +10,12 @@ namespace TaskTracker.UnitTests.Application.Projects;
 public class CreateProjectHandlerTests
 {
     private readonly FakeUserRepository _users = new();
-    private readonly FakeProjectRepository _projects = new();
+    private readonly FakeProjectRepository _projects;
     private readonly FakeUnitOfWork _uow = new();
 
     public CreateProjectHandlerTests()
     {
+        _projects = new FakeProjectRepository(_users);
         _users.Add(new User("Ana Gómez", "ana@example.com", "securepassword", new FakePasswordHasher()));
     }
 

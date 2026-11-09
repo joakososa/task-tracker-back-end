@@ -1,9 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
-using Microsoft.EntityFrameworkCore;
 using TaskTracker.Api.Errors;
 using TaskTracker.Application.Projects;
-using TaskTracker.Domain.Enums;
 using TaskTracker.IntegrationTests.Contract;
 using TaskTracker.IntegrationTests.Fixtures;
 
@@ -26,23 +24,20 @@ public class CreateProjectTests(IntegrationFixture fixture) : ApiTestBase(fixtur
         Assert.Equal(ana.Id, project.Owner.Id);
         Assert.Empty(project.Members);
         Assert.Equal(ana.Id, project.CreatedBy);
-        Assert.Equal($"/projects/{project.Id}", response.Headers.Location?.OriginalString);
+        Assert.Equal($"/projects/{project.Id}", response.Headers.Location?.AbsolutePath);
     }
 
-    // Until GET /projects/{id} exists, the database is the only way to see what was stored.
     [Fact]
-    public async Task PostProjects_WithName_StoresCurrentUserAsOwner()
+    public async Task PostProjects_ThenGetLocation_ReturnsStoredProjectOwnedByCurrentUser()
     {
         var ana = await AuthenticateAsync();
+        var created = await Client.PostAsJsonAsync("/projects", new { name = "Tablero" });
 
-        var response = await Client.PostAsJsonAsync("/projects", new { name = "Tablero" });
+        var project = await Client.GetFromJsonAsync<ProjectDto>(created.Headers.Location);
 
-        var created = await response.Content.ReadFromJsonAsync<ProjectDto>();
-        await using var db = Fixture.CreateDbContext();
-        var stored = await db.Projects.Include(p => p.Members).SingleAsync(p => p.Id == created!.Id);
-        Assert.Equal("Tablero", stored.Name);
-        Assert.Equal(ProjectRole.Owner, stored.RoleOf(ana.Id));
-        Assert.Single(stored.Members);
+        Assert.Equal("Tablero", project?.Name);
+        Assert.Equal(ana.Id, project?.Owner.Id);
+        Assert.Empty(project!.Members);
     }
 
     [Fact]
