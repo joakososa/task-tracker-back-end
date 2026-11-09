@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using TaskTracker.Application.Auth;
 using TaskTracker.Application.Common.Interfaces;
+using TaskTracker.Application.Projects;
 using TaskTracker.Application.Users;
 using TaskTracker.Domain.Services;
 using TaskTracker.Infrastructure.Persistence;
@@ -26,6 +27,7 @@ public static class DependencyInjection
         // Same scoped AppDbContext instance for repositories and the unit of work.
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<AppDbContext>());
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IProjectRepository, ProjectRepository>();
 
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
 

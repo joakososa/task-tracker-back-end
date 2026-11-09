@@ -13,7 +13,10 @@ public abstract class ApiTestBase(IntegrationFixture fixture) : IAsyncLifetime
 {
     protected HttpClient Client { get; } = fixture.Api.CreateClient();
 
-    public Task InitializeAsync() => fixture.ResetDatabaseAsync();
+    /// For assertions the Api cannot answer yet (no GET for the resource), straight against the database.
+    protected IntegrationFixture Fixture { get; } = fixture;
+
+    public Task InitializeAsync() => Fixture.ResetDatabaseAsync();
 
     public Task DisposeAsync()
     {
