@@ -628,6 +628,8 @@ components:
           example: "Proyecto de ejemplo"
     ProjectEditInput:
       type: object
+      required:
+        - name
       properties:
         name:
           type: string
