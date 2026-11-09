@@ -17,7 +17,7 @@ namespace TaskTracker.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.20")
+                .HasAnnotation("ProductVersion", "9.0.22")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -78,15 +78,10 @@ namespace TaskTracker.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<int>("OwnerId")
-                        .HasColumnType("int");
-
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("OwnerId");
 
                     b.ToTable("Projects", (string)null);
                 });
@@ -102,11 +97,24 @@ namespace TaskTracker.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("JoinedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.HasKey("ProjectId", "UserId");
+
+                    b.HasIndex("ProjectId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ProjectMembers_OneOwnerPerProject")
+                        .HasFilter("[Role] = 'Owner'");
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ProjectMembers", (string)null);
+                    b.ToTable("ProjectMembers", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ProjectMembers_Role", "[Role] IN ('Owner', 'Member')");
+                        });
                 });
 
             modelBuilder.Entity("TaskTracker.Domain.Entities.TaskItem", b =>
@@ -255,17 +263,6 @@ namespace TaskTracker.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Author");
-                });
-
-            modelBuilder.Entity("TaskTracker.Domain.Entities.Project", b =>
-                {
-                    b.HasOne("TaskTracker.Domain.Entities.User", "Owner")
-                        .WithMany()
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("TaskTracker.Domain.Entities.ProjectMember", b =>

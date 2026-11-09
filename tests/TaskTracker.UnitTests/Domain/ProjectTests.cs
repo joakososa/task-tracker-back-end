@@ -1,5 +1,6 @@
 using TaskTracker.Domain.Common;
 using TaskTracker.Domain.Entities;
+using TaskTracker.Domain.Enums;
 
 namespace TaskTracker.UnitTests.Domain;
 
@@ -31,7 +32,17 @@ public class ProjectTests
     }
 
     [Fact]
-    public void Remame_WithSpaceAtEnd_TrimsName()
+    public void Constructor_WithOwner_AddsOwnerAsOnlyMember()
+    {
+        var project = CreateProjectWithOwner(1);
+
+        var member = Assert.Single(project.Members);
+        Assert.Equal(1, member.UserId);
+        Assert.Equal(ProjectRole.Owner, member.Role);
+    }
+
+    [Fact]
+    public void Rename_WithSpaceAtEnd_TrimsName()
     {
         var project = CreateProjectWithOwner(1);
 
@@ -41,77 +52,34 @@ public class ProjectTests
     }
 
     [Fact]
-    public void IsMember_IsOwner_ReturnsFalse()
-    {
-        var userId = 2;
-        var project = CreateProjectWithOwner(userId);
-
-        var result = project.IsMember(userId);
-
-
-        Assert.False(result);
-    }
-
-    [Fact]
-    public void HasAccess_ForMember_ReturnsTrue()
-    {
-        var userId = 2;
-        var project = CreateProjectWithOwner(1);
-        project.AddMember(userId);
-
-        var result = project.HasAccess(userId);
-
-        Assert.True(result);
-    }
-
-    [Fact]
-    public void HasAccess_ForOwner_ReturnsTrue()
-    {
-        var userId = 2;
-        var project = CreateProjectWithOwner(userId);
-
-        var result = project.HasAccess(userId);
-
-
-        Assert.True(result);
-    }
-
-
-    [Fact]
-    public void HasAccess_ForStranger_ReturnsFalse()
-    {
-        var userId = 2;
-        var project = CreateProjectWithOwner(1);
-
-        var result = project.HasAccess(userId);
-
-
-        Assert.False(result);
-    }
-
-    [Fact]
-    public void AddMember_IsOwner_Throws()
-    {
-        var userId = 2;
-        var project = CreateProjectWithOwner(userId);
-
-        var ex = Assert.Throws<DomainException>(() => project.AddMember(userId));
-
-        Assert.Equal("PROJECT_INVALID_MEMBER", ex.Code);
-        Assert.False(project.IsMember(userId));
-    }
-
-    [Fact]
-    public void AddMember_IsMember_Throws()
+    public void RoleOf_Owner_ReturnsOwner()
     {
         var project = CreateProjectWithOwner(1);
-        var userId = 2;
-        project.AddMember(userId);
 
-        var ex = Assert.Throws<DomainException>(() => project.AddMember(userId));
+        var role = project.RoleOf(1);
 
-        Assert.Equal("PROJECT_INVALID_MEMBER", ex.Code);
-        Assert.Single(project.Members);
+        Assert.Equal(ProjectRole.Owner, role);
+    }
+
+    [Fact]
+    public void RoleOf_AddedMember_ReturnsMember()
+    {
+        var project = CreateProjectWithOwner(1);
+        project.AddMember(2);
+
+        var role = project.RoleOf(2);
+
+        Assert.Equal(ProjectRole.Member, role);
+    }
+
+    [Fact]
+    public void RoleOf_Stranger_ReturnsNull()
+    {
+        var project = CreateProjectWithOwner(1);
+
+        var role = project.RoleOf(2);
+
+        Assert.Null(role);
     }
 
     [Fact]
@@ -122,9 +90,8 @@ public class ProjectTests
 
         project.AddMember(2);
 
-        var member = Assert.Single(project.Members);
-        Assert.Equal(2, member.UserId);
-        Assert.True(project.IsMember(2));
+        var member = Assert.Single(project.Members, m => m.UserId == 2);
+        Assert.Equal(ProjectRole.Member, member.Role);
         Assert.InRange(member.JoinedAt, before, DateTimeOffset.UtcNow);
     }
 
@@ -136,8 +103,51 @@ public class ProjectTests
         project.AddMember(2);
         project.AddMember(3);
 
+        Assert.Equal(3, project.Members.Count);
+    }
+
+    [Fact]
+    public void AddMember_ExistingMember_ThrowsMemberAlreadyExists()
+    {
+        var project = CreateProjectWithOwner(1);
+        project.AddMember(2);
+
+        var ex = Assert.Throws<DomainException>(() => project.AddMember(2));
+
+        Assert.Equal("PROJECT_MEMBER_ALREADY_EXISTS", ex.Code);
         Assert.Equal(2, project.Members.Count);
-        Assert.True(project.HasAccess(2));
-        Assert.True(project.HasAccess(3));
+    }
+
+    [Fact]
+    public void AddMember_Owner_ThrowsMemberAlreadyExists()
+    {
+        var project = CreateProjectWithOwner(1);
+
+        var ex = Assert.Throws<DomainException>(() => project.AddMember(1));
+
+        Assert.Equal("PROJECT_MEMBER_ALREADY_EXISTS", ex.Code);
+        Assert.Equal(ProjectRole.Owner, project.RoleOf(1));
+        Assert.Single(project.Members);
+    }
+
+    [Fact]
+    public void Can_MemberEditProject_ReturnsFalse()
+    {
+        var project = CreateProjectWithOwner(1);
+        project.AddMember(2);
+
+        var result = project.Can(2, ProjectPermission.EditProject);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void Can_StrangerViewProject_ReturnsFalse()
+    {
+        var project = CreateProjectWithOwner(1);
+
+        var result = project.Can(2, ProjectPermission.ViewProject);
+
+        Assert.False(result);
     }
 }

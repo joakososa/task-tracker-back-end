@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using TaskTracker.Domain.Common;
+using TaskTracker.Domain.Enums;
 
 namespace TaskTracker.Domain.Entities;
 
@@ -11,9 +12,7 @@ public class Project : AuditableEntity
 
     public int Id { get; private set; }
     public string Name { get; private set; }
-    public int OwnerId { get; private set; }
 
-    public User Owner { get; private set; } = null!;
     public IReadOnlyCollection<ProjectMember> Members => _members.AsReadOnly();
 
 #pragma warning disable CS8618 // EF Core materializes entities through this constructor and sets every property.
@@ -23,23 +22,25 @@ public class Project : AuditableEntity
     public Project(string name, int ownerId)
     {
         SetName(name);
-        OwnerId = ownerId;
+        _members.Add(new ProjectMember(ownerId, ProjectRole.Owner));
     }
 
     public void Rename(string name) => SetName(name);
 
-    public bool IsOwner(int userId) => OwnerId == userId;
-    public bool IsMember(int userId) => _members.Any(m => m.UserId == userId);
-    public bool HasAccess(int userId) => IsOwner(userId) || IsMember(userId);
+    /// The user's role in this project, or null when the user is not in it.
+    /// Requires <see cref="Members"/> to be loaded: on a project read without them, everyone is a stranger.
+    public ProjectRole? RoleOf(int userId) =>
+        _members.SingleOrDefault(m => m.UserId == userId)?.Role;
+
+    public bool Can(int userId, ProjectPermission permission) =>
+        RoleOf(userId)?.Grants(permission) ?? false;
 
     public void AddMember(int userId)
     {
-        if (IsOwner(userId))
-            throw new DomainException(DomainErrors.Project.InvalidMember, "The project owner cannot be added as a member.");
-        if (IsMember(userId))
-            throw new DomainException(DomainErrors.Project.InvalidMember, "User is already a member of this project.");
+        if (RoleOf(userId) is not null)
+            throw new DomainException(DomainErrors.Project.MemberAlreadyExists, "User is already a member of this project.");
 
-        _members.Add(new ProjectMember(Id, userId));
+        _members.Add(new ProjectMember(userId, ProjectRole.Member));
     }
 
     [MemberNotNull(nameof(Name))]

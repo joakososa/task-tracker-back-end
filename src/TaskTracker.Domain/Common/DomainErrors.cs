@@ -14,7 +14,7 @@ public static class DomainErrors
 
     public static class Project
     {
-        public static readonly DomainError InvalidMember = new("PROJECT_INVALID_MEMBER", ErrorKind.Validation);
+        public static readonly DomainError MemberAlreadyExists = new("PROJECT_MEMBER_ALREADY_EXISTS", ErrorKind.Conflict);
     }
 
     public static class TaskItem
