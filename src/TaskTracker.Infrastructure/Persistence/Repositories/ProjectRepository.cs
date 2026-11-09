@@ -9,6 +9,8 @@ public class ProjectRepository(AppDbContext db) : IProjectRepository
     public void Add(Project project) => db.Projects.Add(project);
 
     // Tracked: the update, delete and add-member use cases change what this returns.
+    public void Remove(Project project) => db.Projects.Remove(project);
+
     public Task<Project?> GetByIdWithMembersAsync(int id, CancellationToken cancellationToken) =>
         db.Projects
             .Include(p => p.Members).ThenInclude(m => m.User)

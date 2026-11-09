@@ -16,6 +16,8 @@ public class FakeProjectRepository(FakeUserRepository users) : IProjectRepositor
         _projects.Add(project);
     }
 
+    public void Remove(Project project) => _projects.Remove(project);
+
     public Task<Project?> GetByIdWithMembersAsync(int id, CancellationToken cancellationToken)
     {
         var project = _projects.SingleOrDefault(p => p.Id == id);
