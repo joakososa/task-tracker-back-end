@@ -39,10 +39,11 @@ public class UpdateProjectTests(IntegrationFixture fixture) : ApiTestBase(fixtur
     [Fact]
     public async Task PutProject_AsMember_Returns403WithProjectForbiddenCode()
     {
+        var bea = await AuthenticateAsync("bea@example.com");
         await AuthenticateAsync("ana@example.com");
         var created = await CreateProjectAsync();
-        var bea = await AuthenticateAsync("bea@example.com");
-        await AddMemberInDatabaseAsync(created.Id, bea.Id);
+        await AddMemberAsync(created.Id, bea.Id);
+        await LoginAsync("bea@example.com");
 
         var response = await Client.PutAsJsonAsync($"/projects/{created.Id}", new { name = "Tablero nuevo" });
 

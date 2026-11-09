@@ -42,7 +42,7 @@ public class DeleteProjectTests(IntegrationFixture fixture) : ApiTestBase(fixtur
         var bea = await AuthenticateAsync("bea@example.com");
         var ana = await AuthenticateAsync("ana@example.com");
         var created = await CreateProjectAsync();
-        await AddMemberInDatabaseAsync(created.Id, bea.Id);
+        await AddMemberAsync(created.Id, bea.Id);
         await using (var db = Fixture.CreateDbContext())
         {
             var task = new TaskItem(created.Id, "Tarea", "Descripción");
@@ -65,10 +65,11 @@ public class DeleteProjectTests(IntegrationFixture fixture) : ApiTestBase(fixtur
     [Fact]
     public async Task DeleteProject_AsMember_Returns403WithProjectForbiddenCode()
     {
+        var bea = await AuthenticateAsync("bea@example.com");
         await AuthenticateAsync("ana@example.com");
         var created = await CreateProjectAsync();
-        var bea = await AuthenticateAsync("bea@example.com");
-        await AddMemberInDatabaseAsync(created.Id, bea.Id);
+        await AddMemberAsync(created.Id, bea.Id);
+        await LoginAsync("bea@example.com");
 
         var response = await Client.DeleteAsync($"/projects/{created.Id}");
 

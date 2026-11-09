@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using TaskTracker.Application.Common.Interfaces;
 using TaskTracker.Application.Projects;
 using TaskTracker.Api.Requests;
+using TaskTracker.Application.Projects.AddMember;
 using TaskTracker.Application.Projects.Create;
 using TaskTracker.Application.Projects.Delete;
 using TaskTracker.Application.Projects.GetById;
@@ -58,6 +59,17 @@ public sealed class ProjectsController : ControllerBase
         CancellationToken cancellationToken)
     {
         await handler.HandleAsync(new DeleteProjectCommand(id), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{id:int}/members")]
+    public async Task<IActionResult> AddMember(
+        int id,
+        AddMemberRequest request,
+        [FromServices] ICommandHandler<AddProjectMemberCommand> handler,
+        CancellationToken cancellationToken)
+    {
+        await handler.HandleAsync(new AddProjectMemberCommand(id, request.UserId), cancellationToken);
         return NoContent();
     }
 }

@@ -9,4 +9,7 @@ public static class ProjectErrors
 
     public static ForbiddenException Forbidden() =>
         new("PROJECT_FORBIDDEN", "You do not have permission for this action on this project.");
+
+    /// 400, not 404: the project was found; what is wrong is the userId in the body.
+    public static InvalidRequestException UserToAddNotFound() => new("USER_NOT_FOUND", "User does not exist.");
 }

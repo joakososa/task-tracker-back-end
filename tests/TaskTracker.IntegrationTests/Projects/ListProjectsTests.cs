@@ -17,8 +17,8 @@ public class ListProjectsTests(IntegrationFixture fixture) : ApiTestBase(fixture
         await AuthenticateAsync("ana@example.com");
         var shared = await CreateProjectAsync("Compartido por Ana");
         await CreateProjectAsync("Solo de Ana");
-        await AddMemberInDatabaseAsync(shared.Id, bea.Id);
-        await AuthenticateAsync("bea@example.com");
+        await AddMemberAsync(shared.Id, bea.Id);
+        await LoginAsync("bea@example.com");
 
         var response = await Client.GetAsync("/projects");
 

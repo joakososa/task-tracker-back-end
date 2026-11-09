@@ -1,6 +1,5 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Microsoft.EntityFrameworkCore;
 using TaskTracker.Application.Auth;
 using TaskTracker.Application.Projects;
 using TaskTracker.Application.Users;
@@ -26,18 +25,27 @@ public abstract class ApiTestBase(IntegrationFixture fixture) : IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    /// Registers a user and logs in through the Api; every later request of the test carries the token.
+    private const string Password = "password123";
+
+    /// Registers a new user and logs in through the Api; every later request of the test carries the token.
+    /// Only for new emails: to switch back to a user the test already registered, use <see cref="LoginAsync"/>.
     protected async Task<UserDto> AuthenticateAsync(string email = "ana@example.com")
     {
-        const string password = "password123";
-        var registered = await Client.PostAsJsonAsync("/users", new { name = "Ana", email, password });
+        var registered = await Client.PostAsJsonAsync("/users", new { name = "Ana", email, password = Password });
+        registered.EnsureSuccessStatusCode();
         var user = (await registered.Content.ReadFromJsonAsync<UserDto>())!;
 
-        var login = await Client.PostAsJsonAsync("/auth/login", new { email, password });
+        await LoginAsync(email);
+        return user;
+    }
+
+    /// Logs in as a user the test already registered; every later request of the test carries the token.
+    protected async Task LoginAsync(string email)
+    {
+        var login = await Client.PostAsJsonAsync("/auth/login", new { email, password = Password });
+        login.EnsureSuccessStatusCode();
         var token = (await login.Content.ReadFromJsonAsync<AccessTokenDto>())!;
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
-
-        return user;
     }
 
     /// Creates a project through the Api as the currently authenticated user.
@@ -47,12 +55,10 @@ public abstract class ApiTestBase(IntegrationFixture fixture) : IAsyncLifetime
         return (await response.Content.ReadFromJsonAsync<ProjectDto>())!;
     }
 
-    /// Straight in the database until POST /projects/{id}/members exists.
-    protected async Task AddMemberInDatabaseAsync(int projectId, int userId)
+    /// Adds a member through the Api; the current user must be the project's owner.
+    protected async Task AddMemberAsync(int projectId, int userId)
     {
-        await using var db = Fixture.CreateDbContext();
-        var project = await db.Projects.Include(p => p.Members).SingleAsync(p => p.Id == projectId);
-        project.AddMember(userId);
-        await db.SaveChangesAsync();
+        var response = await Client.PostAsJsonAsync($"/projects/{projectId}/members", new { userId });
+        response.EnsureSuccessStatusCode();
     }
 }

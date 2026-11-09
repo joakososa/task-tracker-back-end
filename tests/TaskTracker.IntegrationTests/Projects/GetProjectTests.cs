@@ -15,7 +15,7 @@ public class GetProjectTests(IntegrationFixture fixture) : ApiTestBase(fixture)
         var bea = await AuthenticateAsync("bea@example.com");
         var ana = await AuthenticateAsync("ana@example.com");
         var created = await CreateProjectAsync("Tablero");
-        await AddMemberInDatabaseAsync(created.Id, bea.Id);
+        await AddMemberAsync(created.Id, bea.Id);
 
         var response = await Client.GetAsync($"/projects/{created.Id}");
 
@@ -30,10 +30,11 @@ public class GetProjectTests(IntegrationFixture fixture) : ApiTestBase(fixture)
     [Fact]
     public async Task GetProject_AsMember_Returns200()
     {
+        var bea = await AuthenticateAsync("bea@example.com");
         await AuthenticateAsync("ana@example.com");
         var created = await CreateProjectAsync();
-        var bea = await AuthenticateAsync("bea@example.com");
-        await AddMemberInDatabaseAsync(created.Id, bea.Id);
+        await AddMemberAsync(created.Id, bea.Id);
+        await LoginAsync("bea@example.com");
 
         var response = await Client.GetAsync($"/projects/{created.Id}");
 
