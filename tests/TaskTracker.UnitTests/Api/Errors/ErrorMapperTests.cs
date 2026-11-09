@@ -76,6 +76,39 @@ public class ErrorMapperTests
     }
 
     [Fact]
+    public void Map_NotFoundException_Returns404WithItsCodeAndMessage()
+    {
+        var (status, body) = ErrorMapper.Map(new NotFoundException("SOME_NOT_FOUND", "It is not there."));
+
+        Assert.Equal(404, status);
+        Assert.Equal("SOME_NOT_FOUND", body.Code);
+        Assert.Equal("It is not there.", body.Message);
+        Assert.Null(body.Errors);
+    }
+
+    [Fact]
+    public void Map_ForbiddenException_Returns403WithItsCodeAndMessage()
+    {
+        var (status, body) = ErrorMapper.Map(new ForbiddenException("SOME_FORBIDDEN", "Not for you."));
+
+        Assert.Equal(403, status);
+        Assert.Equal("SOME_FORBIDDEN", body.Code);
+        Assert.Equal("Not for you.", body.Message);
+        Assert.Null(body.Errors);
+    }
+
+    [Fact]
+    public void Map_InvalidRequestException_Returns400WithItsCodeAndMessage()
+    {
+        var (status, body) = ErrorMapper.Map(new InvalidRequestException("SOME_BAD_REFERENCE", "Points nowhere."));
+
+        Assert.Equal(400, status);
+        Assert.Equal("SOME_BAD_REFERENCE", body.Code);
+        Assert.Equal("Points nowhere.", body.Message);
+        Assert.Null(body.Errors);
+    }
+
+    [Fact]
     public void Map_UnexpectedException_Returns500WithoutInternalMessage()
     {
         var exception = new InvalidOperationException("Connection string leaked here");

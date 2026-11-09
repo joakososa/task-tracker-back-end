@@ -16,7 +16,7 @@ deployed and operated.
 - [x] Domain model with unit tests (xUnit)
 - [x] EF Core + SQL Server with migrations, Fluent API configurations and audit fields
 - [x] JWT authentication (register, login, current user profile)
-- [ ] Resource-based authorization (project membership)
+- [x] Resource-based authorization (per-project roles, ADR 0009)
 - [x] Integration tests against a real SQL Server using Testcontainers
 - [x] CI pipeline on GitHub Actions (build, format, tests, coverage, dependency review)
 - [ ] Containerized API (Docker) and CD pipeline
@@ -115,6 +115,22 @@ Smaller, non-obvious choices are noted here until they deserve one.
 - **Domain errors carry a code and a kind** (`Validation`, `Conflict`, `NotFound`,
   `Forbidden`). The code matches `Error.code` in the OpenAPI contract; the API maps
   the kind to an HTTP status, so Domain knows nothing about HTTP (ADR 0007).
+- **Failures outside the entities carry their own code too.** `NotFoundException` (404),
+  `ForbiddenException` (403) and `InvalidRequestException` (400) are Application exceptions
+  with a code per case (`PROJECT_NOT_FOUND`, `PROJECT_FORBIDDEN`, `USER_NOT_FOUND`), declared
+  once per feature (`ProjectErrors`). Adding a member who does not exist is a 400, not a 404:
+  the project was found, the body points nowhere.
+- **Project permissions are checked in each use case** (ADR 0009). Roles (`Owner`,
+  `Member`) are stored per project in `ProjectMembers` and map to permissions in Domain;
+  handlers load the project, answer 404 if it does not exist and 403 if the user lacks the
+  permission. Validation still runs first, so an outsider with a bad body gets 400.
+- **Commands may return nothing.** `ICommandHandler<TCommand>` exists next to
+  `ICommandHandler<TCommand, TResult>`: a command that only changes state (delete, add
+  member) returns `Task`, as command-query separation intends. Returning the resource is a
+  deliberate exception for endpoints whose contract answers with it (create, update).
+- **Route id + body become one command in the controller.** When the id comes from the
+  route, the body binds to a small request record in Api (`UpdateProjectRequest`) and the
+  controller builds the command, so the command never accepts an id from the body.
 - **Missing fields are reported by the validator, not by model binding.**
   `SuppressImplicitRequiredAttributeForNonNullableReferenceTypes` stops ASP.NET Core
   from treating non-nullable strings as `[Required]`, so a missing `name` comes back

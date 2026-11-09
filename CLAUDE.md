@@ -31,8 +31,15 @@ Inspect the DB: `docker exec tasktracker-sql /opt/mssql-tools18/bin/sqlcmd -S lo
   use case needs them, plus `IUnitOfWork.SaveChangesAsync()`. Interfaces in Application, EF implementations
   in Infrastructure. Domain entities are mapped directly by EF (no separate persistence models).
 - Use cases: one handler per use case, commands and queries separated (light CQRS), no MediatR.
+  `ICommandHandler<TCommand>` for commands that return nothing (204), `ICommandHandler<TCommand, TResult>` only
+  when the contract answers with a body; both go through a `ValidationDecorator`. When the id comes from the
+  route, the body binds to a request record in `Api/Requests` and the controller builds the command.
   Validation (ADR 0007): the FluentValidation validator checks the whole command using Domain constants for
   limits; entities re-check their own rules as a safety net. Rules live where their data lives.
+- Authorization (ADR 0009): per-project roles in `ProjectMembers` mapped to `ProjectPermission` in Domain.
+  Every handler that touches a project loads it (with members), throws `ProjectErrors.NotFound()` (404) if it is
+  missing and `ProjectErrors.Forbidden()` (403) unless `project.Can(userId, permission)`. Ask for a permission,
+  never a role. Each such endpoint needs an HTTP test with a user who lacks the permission.
 - Api is presentation **and** composition root (`Program.cs`). See README "Design decisions".
 - Each layer registers its own services (`AddInfrastructure()`, `AddApplication()`); `Program.cs` only calls them.
 - Domain entities are rich: constructors enforce invariants, `private set`, behaviour methods
@@ -42,7 +49,9 @@ Inspect the DB: `docker exec tasktracker-sql /opt/mssql-tools18/bin/sqlcmd -S lo
 - Domain errors: throw `DomainException(DomainErrors.X, message)`; each `DomainError` has a `Code` and an `ErrorKind`.
   Codes match `Error.code` in `docs/openapi.yaml`. Api (`ErrorMapper`) maps kind → HTTP status; Domain never knows HTTP.
   Failures that are not entity rules are Application exceptions mapped by `ErrorMapper`
-  (`AuthenticationFailedException` → 401 `INVALID_CREDENTIALS`, `NotAuthenticatedException` → 401 `UNAUTHORIZED`).
+  (`AuthenticationFailedException` → 401 `INVALID_CREDENTIALS`, `NotAuthenticatedException` → 401 `UNAUTHORIZED`;
+  `NotFoundException` → 404, `ForbiddenException` → 403 and `InvalidRequestException` → 400 carry their own code,
+  declared once per feature, e.g. `ProjectErrors`).
   Every error response uses `ErrorResponse` (the contract `Error` schema), including model-binding 400s.
 - Persistence: one `IEntityTypeConfiguration<T>` per entity in `Infrastructure/Persistence/Configurations`.
   Nullability comes from the entity (no `IsRequired()`); max lengths come from Domain constants.
@@ -135,7 +144,7 @@ writes them through `entry.Property(...).CurrentValue`. No model change, no migr
 Splitting a `TimestampedEntity` out so `User` drops `CreatedBy` was considered and dropped: one extra base
 class to remove a column that is always null, while the contract keeps `createdBy` optional anyway.
 
-**Step 5 (CI) complete** on branch `ci-pipeline`, PR pending:
+**Step 5 (CI) complete**, merged (PR #13):
 - 5.1–5.2 `global.json` (SDK 9.0.301), Central Package Management, `Directory.Build.props` (NuGet audit of
   transitive packages; NU1901–NU1904 never errors). CS8618 fixed (`[MemberNotNull]`, pragma on EF constructors).
 - 5.3 `ci.yml`: one build-and-test job (format, Release build with warnings as errors and a clear failure
@@ -148,12 +157,32 @@ class to remove a column that is always null, while the contract keeps `createdB
   versions from `Directory.Packages.props`) + `dependency-review` on PRs.
 - 5.6 README (badge, CI section, design decisions). Repo settings are done by hand in GitHub.
 
-**Next:** step 6: Projects end to end (RF-04..RF-08). Later: Dependabot for NuGet, Trivy once there is an image.
+**Step 6 (projects, RF-04..RF-08) complete** on branch `projects`, PR pending:
+- 6.1 ADR 0009 (Accepted): per-project roles, load then authorize in each handler, 404 vs 403 per RF-18.
+- 6.2 `ProjectMembers.Role` (string + CHECK, filtered unique index: one owner per project), `Projects.OwnerId`
+  dropped. Migration `ProjectMemberRoles` hand-written to move owners into `ProjectMembers` both ways,
+  covered by `MigrationTests` (isolated database per test). `docs/initial-schema.sql` stays an `InitialCreate` snapshot.
+- 6.3 `POST /projects` (201 + `Location`; the creator becomes the `Owner` row).
+- 6.4 `GET /projects` (projects where the user has a role, no tracking) and `GET /projects/{id}`.
+  `NotFoundException`/`ForbiddenException` + `ProjectErrors`. `ProjectDto.FromEntity` needs members and users loaded.
+- 6.5 `PUT` and `DELETE /projects/{id}` (owner only); `ICommandHandler<TCommand>` + its decorator. Delete
+  cascades to members, tasks and comments (HTTP test).
+- 6.6 `POST /projects/{id}/members` (owner only; 409 already in the project, 400 `USER_NOT_FOUND` through
+  `InvalidRequestException`, looked up after authorization). Test helpers: `AuthenticateAsync` (new user),
+  `LoginAsync` (switch back), `CreateProjectAsync`, `AddMemberAsync`.
+
+Test suite: 162 unit + 71 integration, all green.
+
+**Next:** step 7: tasks and comments (RF-09..RF-16). Authorization for task and comment use cases per ADR 0009:
+`IProjectRepository.GetRoleAsync(projectId, userId)` + an Application `EnsureAsync(projectId, permission)`,
+and new permissions (`ManageTasks`, `Comment`). Later: Dependabot for NuGet, Trivy once there is an image.
 
 Open items noted for later: .NET 9 → 10 (LTS) upgrade; `/health/live` vs `/health/ready` when
 containerizing; least-privilege SQL login for the app; Identity migration as a separate exercise;
 Result pattern if Application fills with try/catch; Stryker mutation run over Domain; `Email` value object; email verification on
-registration (event → queue → Azure Function → Azure Communication Services Email, or AWS SES).
+registration (event → queue → Azure Function → Azure Communication Services Email, or AWS SES);
+concurrent inserts that hit a unique key (two registrations with one email, two adds of one member) end in
+500 instead of 409: map the unique-violation `DbUpdateException` if it ever matters.
 
 ## How AI assistance is used
 

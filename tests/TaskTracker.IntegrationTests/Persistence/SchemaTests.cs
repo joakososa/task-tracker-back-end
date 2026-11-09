@@ -85,6 +85,38 @@ public class SchemaTests(IntegrationFixture fixture)
         Assert.Contains("IX_Users_Email", ex.InnerException?.Message);
     }
 
+    [Fact]
+    public async Task ProjectMembers_RejectSecondOwner()
+    {
+        await using var db = fixture.CreateDbContext();
+        var (_, projectId) = await SeedUserAndProjectAsync(db);
+        var otherUserId = await InsertUserAsync(db, $"{Guid.NewGuid():N}@example.com");
+
+        var ex = await Assert.ThrowsAsync<SqlException>(() => db.Database.ExecuteSqlRawAsync(
+            """
+            INSERT INTO [ProjectMembers] ([ProjectId], [UserId], [Role], [JoinedAt])
+            VALUES ({0}, {1}, N'Owner', SYSDATETIMEOFFSET())
+            """, projectId, otherUserId));
+
+        Assert.Contains("IX_ProjectMembers_OneOwnerPerProject", ex.Message);
+    }
+
+    [Fact]
+    public async Task ProjectMembers_RejectRoleOutsideCheckConstraint()
+    {
+        await using var db = fixture.CreateDbContext();
+        var (_, projectId) = await SeedUserAndProjectAsync(db);
+        var otherUserId = await InsertUserAsync(db, $"{Guid.NewGuid():N}@example.com");
+
+        var ex = await Assert.ThrowsAsync<SqlException>(() => db.Database.ExecuteSqlRawAsync(
+            """
+            INSERT INTO [ProjectMembers] ([ProjectId], [UserId], [Role], [JoinedAt])
+            VALUES ({0}, {1}, N'Admin', SYSDATETIMEOFFSET())
+            """, projectId, otherUserId));
+
+        Assert.Contains("CK_ProjectMembers_Role", ex.Message);
+    }
+
     private static async Task<(int userId, int projectId)> SeedUserAndProjectAsync(AppDbContext db)
     {
         var userId = await InsertUserAsync(db, $"{Guid.NewGuid():N}@example.com");

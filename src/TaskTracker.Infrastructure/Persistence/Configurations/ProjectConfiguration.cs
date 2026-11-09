@@ -15,11 +15,6 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
         builder.Property(p => p.Name)
             .HasMaxLength(Project.NameMaxLength);
 
-        builder.HasOne(p => p.Owner)
-            .WithMany()
-            .HasForeignKey(p => p.OwnerId)
-            .OnDelete(DeleteBehavior.Restrict);
-
         builder.HasMany(p => p.Members)
             .WithOne()
             .HasForeignKey(m => m.ProjectId)
