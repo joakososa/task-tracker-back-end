@@ -1,6 +1,6 @@
 # 0009. Project authorization: per-project roles stored with the membership, checked in each use case
 
-* **State:** Proposed
+* **State:** Accepted
 * **Date:** 2026-11-08
 * **Decision-maker:** Developer Joaquin Sosa
 * **Consulted:** Claude Code
