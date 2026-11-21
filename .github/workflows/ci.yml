@@ -73,7 +73,7 @@ jobs:
 
       # Coverage is reported, not enforced: no threshold.
       - name: Coverage report
-        uses: danielpalme/ReportGenerator-GitHub-Action@861674232075b2c6bd1405a04c4bb9b150653e81 # v5.5.12
+        uses: danielpalme/ReportGenerator-GitHub-Action@5f3701a41d14548c9b8e575a5c235230e515cbc0 # v5.6.0
         with:
           reports: coverage/**/coverage.cobertura.xml
           targetdir: coverage-report
@@ -122,6 +122,6 @@ jobs:
     needs: dependency-submission
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+      - uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
         with:
           retry-on-snapshot-warnings: true # the submitted snapshot can take a few seconds to be processed
