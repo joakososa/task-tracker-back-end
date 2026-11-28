@@ -73,7 +73,7 @@ jobs:
 
       # Coverage is reported, not enforced: no threshold.
       - name: Coverage report
-        uses: danielpalme/ReportGenerator-GitHub-Action@861674232075b2c6bd1405a04c4bb9b150653e81 # v5.5.12
+        uses: danielpalme/ReportGenerator-GitHub-Action@70c37c4d588cff5bf9cf190830c6f01dfcfb884b # v5.6.1
         with:
           reports: coverage/**/coverage.cobertura.xml
           targetdir: coverage-report
@@ -109,7 +109,7 @@ jobs:
 
       # On a PR, the snapshot belongs to the branch's last commit, which is what dependency-review compares.
       - name: Submit resolved packages
-        uses: advanced-security/component-detection-dependency-submission-action@a02aeda7a175ad4dd38a13c4d3ff2df9da8f2cf0 # v0.2.0
+        uses: advanced-security/component-detection-dependency-submission-action@9887d3a4295305f4e7b03a1cfdb2099d44cadf52 # v0.2.1
         with:
           detectorsCategories: NuGet
           snapshot-sha: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -122,6 +122,6 @@ jobs:
     needs: dependency-submission
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+      - uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
         with:
           retry-on-snapshot-warnings: true # the submitted snapshot can take a few seconds to be processed
